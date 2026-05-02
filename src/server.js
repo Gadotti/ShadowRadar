@@ -33,6 +33,7 @@ function buildApp() {
   app.use('/api', authenticate);
 
   app.use('/api', require('./api/assetRoutes'));
+  app.use('/api/config', require('./api/configRoutes'));
 
   // Fallback: serve index.html for any non-API route (SPA hash routing)
   app.get('*', (req, res, next) => {
