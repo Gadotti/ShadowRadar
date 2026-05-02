@@ -647,3 +647,13 @@ code {
 }
 
 .info-value { color: var(--color-text); font-size: 13px; }
+
+.scan-counters {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  padding: 10px 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  display: inline-block;
+}
