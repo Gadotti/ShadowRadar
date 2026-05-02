@@ -601,7 +601,7 @@ Permite que sistemas externos (ex: pipelines CI/CD) registrem novos ativos ou at
 ### 9.1 Variáveis de Ambiente
 
 ```env
-PORT=3000
+PORT=3500
 NODE_ENV=production
 DB_PATH=./data/shadowradar.db
 JWT_SECRET=<string aleatória ≥ 32 caracteres>

@@ -118,11 +118,11 @@ Inserir dados de teste para desenvolvimento:
 - Configura middleware: `helmet`, `cookie-parser`, `express.json()`, CORS
 - Serve `public/` como arquivos estáticos
 - Rota de health check: `GET /api/health` → `{ status: 'ok', version: '...' }`
-- Inicia na porta definida por `PORT` (padrão: 3000)
+- Inicia na porta definida por `PORT` (padrão: 3500)
 
 ### `.env.example`
 ```
-PORT=3000
+PORT=3500
 NODE_ENV=development
 DB_PATH=./data/shadowradar.db
 JWT_SECRET=troque-por-string-aleatoria-de-alta-entropia
@@ -142,8 +142,8 @@ data/
 2. Copiar `.env.example` para `.env` e ajustar
 3. `npm run db:migrate` — deve criar o arquivo `data/shadowradar.db` e exibir as migrations aplicadas
 4. `npm run db:seed` — deve inserir os dados de teste sem erros
-5. `npm start` — servidor sobe na porta 3000
-6. `GET http://localhost:3000/api/health` → retorna `{ "status": "ok" }`
+5. `npm start` — servidor sobe na porta 3500
+6. `GET http://localhost:3500/api/health` → retorna `{ "status": "ok" }`
 7. Executar `npm run db:migrate` uma segunda vez — não deve reexecutar nada (idempotência)
 8. Verificar com um cliente SQLite que as 5 tabelas existem e os pragmas estão ativos:
    `PRAGMA journal_mode;` → deve retornar `wal`
