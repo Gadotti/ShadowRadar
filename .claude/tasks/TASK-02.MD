@@ -101,3 +101,4 @@ Montar as rotas de autenticação no Express:
 9. `POST /api/auth/logout` → resposta 200, cookie removido
 10. `GET /api/auth/me` após logout → resposta 401
 11. Testar rate limiting: 11 tentativas de login com senha errada → 11ª deve retornar 429
+12. Para o serviço npm para liberar a porta.

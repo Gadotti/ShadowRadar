@@ -132,7 +132,7 @@ Não carregar de CDN externo — `Content-Security-Policy` não permite em produ
 
 ## Como validar
 
-1. `npm start` e abrir `http://localhost:3000` no navegador
+1. `npm start` e abrir `http://localhost:3500` no navegador
 2. Deve redirecionar automaticamente para `#/login`
 3. Login com credenciais erradas → mensagem de erro inline
 4. Login com credenciais corretas → redireciona para `#/dashboard`
