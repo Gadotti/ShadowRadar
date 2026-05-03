@@ -7,6 +7,7 @@ const MENU = [
   { path: '/scan',        icon: '⟳', label: 'Executar Scan',  editorOnly: true },
   { path: '/config/nist', icon: '⚙', label: 'Config NIST',    editorOnly: true },
   { path: '/config/ai',   icon: '✦', label: 'Config AI',      editorOnly: true },
+  { path: '/settings',    icon: '⚿', label: 'API Keys',       editorOnly: true },
 ];
 
 let el;

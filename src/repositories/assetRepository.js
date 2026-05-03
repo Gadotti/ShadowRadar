@@ -41,6 +41,12 @@ function findByNameAndTag(db, name, tag) {
   return db.prepare('SELECT * FROM assets WHERE name = ? AND tag = ?').get(name, tag);
 }
 
+// Used by sync: matches name+tag where tag may be null
+function findByNameAndOptionalTag(db, name, tag) {
+  if (tag) return db.prepare('SELECT * FROM assets WHERE name = ? AND tag = ?').get(name, tag);
+  return db.prepare('SELECT * FROM assets WHERE name = ? AND tag IS NULL').get(name);
+}
+
 function create(db, { name, tag, description, url, current_version, cve_start_date, active = 1 }) {
   const result = db.prepare(`
     INSERT INTO assets (name, tag, description, url, current_version, cve_start_date, active)
@@ -79,7 +85,7 @@ function getCveCount(db, id) {
 }
 
 module.exports = {
-  findAll, findById, findByNameAndTag,
+  findAll, findById, findByNameAndTag, findByNameAndOptionalTag,
   create, update, remove, setActive,
   getLastScanDate, getCveCount,
 };

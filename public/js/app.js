@@ -9,9 +9,10 @@ const ROUTES = {
   '/scan':        () => import('./pages/scan.js'),
   '/config/nist': () => import('./pages/configNist.js'),
   '/config/ai':   () => import('./pages/configAi.js'),
+  '/settings':    () => import('./pages/settings.js'),
 };
 
-const EDITOR_ROUTES = ['/scan', '/config/nist', '/config/ai'];
+const EDITOR_ROUTES = ['/scan', '/config/nist', '/config/ai', '/settings'];
 
 let currentUser = null;
 

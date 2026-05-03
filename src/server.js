@@ -29,14 +29,19 @@ function buildApp() {
   app.get('/api/health', (_req, res) => res.json({ status: 'ok', version }));
   app.use('/api/auth', authRoutes);
 
+  // External integration endpoints — own auth (JWT cookie or X-API-Key), before JWT gate
+  app.use('/api/v1/export',      require('./api/exportRoutes'));
+  app.use('/api/v1/assets/sync', require('./api/syncRoutes'));
+
   // All subsequent /api/* routes require a valid JWT cookie
   app.use('/api', authenticate);
 
   app.use('/api', require('./api/assetRoutes'));
-  app.use('/api/config',     require('./api/configRoutes'));
-  app.use('/api/scan',       require('./api/scanRoutes'));
-  app.use('/api/cves',       require('./api/cveRoutes'));
-  app.use('/api/dashboard',  require('./api/dashboardRoutes'));
+  app.use('/api/config',            require('./api/configRoutes'));
+  app.use('/api/scan',              require('./api/scanRoutes'));
+  app.use('/api/cves',              require('./api/cveRoutes'));
+  app.use('/api/dashboard',         require('./api/dashboardRoutes'));
+  app.use('/api/settings/api-keys', require('./api/apiKeyRoutes'));
 
   // Fallback: serve index.html for any non-API route (SPA hash routing)
   app.get('*', (req, res, next) => {
