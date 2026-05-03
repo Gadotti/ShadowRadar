@@ -1,6 +1,9 @@
 {
   "permissions": {
     "allow": [
+      "Bash(node --test tests/**/*.test.js tests/**/*.test.mjs)",
+      "Bash(node --test tests/unit/**/*.test.js)",
+      "Bash(npm test *)"
     ]
   }
 }
