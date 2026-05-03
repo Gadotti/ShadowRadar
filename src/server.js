@@ -33,9 +33,10 @@ function buildApp() {
   app.use('/api', authenticate);
 
   app.use('/api', require('./api/assetRoutes'));
-  app.use('/api/config', require('./api/configRoutes'));
-  app.use('/api/scan',   require('./api/scanRoutes'));
-  app.use('/api/cves',   require('./api/cveRoutes'));
+  app.use('/api/config',     require('./api/configRoutes'));
+  app.use('/api/scan',       require('./api/scanRoutes'));
+  app.use('/api/cves',       require('./api/cveRoutes'));
+  app.use('/api/dashboard',  require('./api/dashboardRoutes'));
 
   // Fallback: serve index.html for any non-API route (SPA hash routing)
   app.get('*', (req, res, next) => {
