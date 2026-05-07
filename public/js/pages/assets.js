@@ -328,10 +328,12 @@ export function render(container, user) {
     const errorEl   = overlay.querySelector('#modal-error');
     const submitBtn = overlay.querySelector('#modal-submit');
 
-    const close = () => overlay.remove();
+    const close = () => { document.removeEventListener('keydown', onEsc); overlay.remove(); };
+    const onEsc = e => { if (e.key === 'Escape') close(); };
     overlay.querySelector('.modal-close').addEventListener('click', close);
     overlay.querySelector('#modal-cancel').addEventListener('click', close);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', onEsc);
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -390,6 +392,14 @@ export function render(container, user) {
 
   // ── Wire up controls ─────────────────────────────────────────────────────
   searchEl.addEventListener('input', debounce(() => { page = 1; search = searchEl.value.trim(); load(); }, 300));
+  searchEl.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || !searchEl.value) return;
+    e.stopPropagation();
+    searchEl.value = '';
+    page = 1;
+    search = '';
+    load();
+  });
   filterEl.addEventListener('change', () => { page = 1; active = filterEl.value; load(); });
   container.querySelector('#btn-new')?.addEventListener('click', () => openModal(null));
 

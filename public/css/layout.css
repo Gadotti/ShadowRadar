@@ -78,8 +78,10 @@ body.login-page #content  { padding: 0; }
 .sidebar-toggle:hover { background: var(--color-surface-hover); color: var(--color-text); }
 
 #sidebar.collapsed .sidebar-title      { display: none; }
+#sidebar.collapsed .sidebar-logo       { display: none; }
 #sidebar.collapsed .sidebar-item-label { display: none; }
 #sidebar.collapsed .sidebar-version    { display: none; }
+#sidebar.collapsed .sidebar-header     { justify-content: center; }
 
 .sidebar-nav {
   flex: 1;

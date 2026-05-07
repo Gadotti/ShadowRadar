@@ -40,6 +40,8 @@ function renderShell() {
     <div class="sidebar-footer" id="sidebar-footer"></div>
   `;
   document.getElementById('sidebar-toggle').addEventListener('click', toggleCollapse);
+  el.addEventListener('click', expandOnEmptyClick);
+  document.addEventListener('keydown', collapseOnEsc);
 }
 
 function renderNav(user, route) {
@@ -76,6 +78,24 @@ function toggleCollapse() {
   localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0');
   const btn = document.getElementById('sidebar-toggle');
   if (btn) btn.textContent = collapsed ? '›' : '‹';
+}
+
+function expandOnEmptyClick(e) {
+  if (!el.classList.contains('collapsed')) return;
+  if (e.target.closest('.sidebar-item, #sidebar-toggle, .sidebar-logout')) return;
+  el.classList.remove('collapsed');
+  localStorage.setItem('sidebar_collapsed', '0');
+  const btn = document.getElementById('sidebar-toggle');
+  if (btn) btn.textContent = '‹';
+}
+
+function collapseOnEsc(e) {
+  if (e.key !== 'Escape' || el.classList.contains('collapsed') || document.querySelector('.modal-overlay')) return;
+  if (document.activeElement?.matches('input, textarea, select')) return;
+  el.classList.add('collapsed');
+  localStorage.setItem('sidebar_collapsed', '1');
+  const btn = document.getElementById('sidebar-toggle');
+  if (btn) btn.textContent = '›';
 }
 
 function applyCollapsed() {

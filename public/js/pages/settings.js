@@ -145,10 +145,12 @@ export async function render(container, user) {
     const overlay = generateModal();
     document.body.appendChild(overlay);
 
-    const close = () => overlay.remove();
+    const close = () => { document.removeEventListener('keydown', onEsc); overlay.remove(); };
+    const onEsc = e => { if (e.key === 'Escape') close(); };
     overlay.querySelector('.modal-close').addEventListener('click', close);
     overlay.querySelector('#gen-cancel').addEventListener('click', close);
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', onEsc);
 
     overlay.querySelector('#gen-form').addEventListener('submit', async e => {
       e.preventDefault();
@@ -182,8 +184,10 @@ export async function render(container, user) {
   function openResultModal(data) {
     const overlay = resultModal(data);
     document.body.appendChild(overlay);
-    const close = () => overlay.remove();
+    const close = () => { document.removeEventListener('keydown', onEsc); overlay.remove(); };
+    const onEsc = e => { if (e.key === 'Escape') close(); };
     overlay.querySelector('#btn-done').addEventListener('click', close);
+    document.addEventListener('keydown', onEsc);
     overlay.querySelector('#btn-copy').addEventListener('click', () => {
       const input = overlay.querySelector('#key-value');
       input.select();

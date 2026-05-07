@@ -395,6 +395,9 @@ export async function render(container, user) {
       container.appendChild(detailOverlay);
       container.appendChild(detailPanel);
       detailOverlay.addEventListener('click', closeDetail);
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && detailPanel?.classList.contains('open') && !document.querySelector('.modal-overlay')) closeDetail();
+      });
     }
     detailPanel.innerHTML = detailHTML(cve);
     detailPanel.querySelector('.detail-close')?.addEventListener('click', closeDetail);
@@ -413,10 +416,12 @@ export async function render(container, user) {
     overlay.innerHTML = assessModalHTML(cve);
     document.body.appendChild(overlay);
 
-    const close = () => overlay.remove();
+    const close = () => { document.removeEventListener('keydown', onEsc); overlay.remove(); };
+    const onEsc = e => { if (e.key === 'Escape') close(); };
     overlay.querySelector('.modal-close').addEventListener('click', close);
     overlay.querySelector('#assess-cancel').addEventListener('click', close);
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', onEsc);
 
     overlay.querySelector('#assess-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -453,6 +458,13 @@ export async function render(container, user) {
   const debouncedLoad = debounce(load, 300);
 
   container.querySelector('#f-search')?.addEventListener('input', e => { filters.search = e.target.value.trim(); debouncedLoad(); });
+  container.querySelector('#f-search')?.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || !e.target.value) return;
+    e.stopPropagation();
+    e.target.value = '';
+    filters.search = '';
+    load();
+  });
   container.querySelector('#f-asset')?.addEventListener('change', e => { filters.asset_id = e.target.value; load(); });
   container.querySelector('#f-ai')?.addEventListener('change', e => { filters.has_ai_assessment = e.target.value; load(); });
   container.querySelector('#f-active')?.addEventListener('change', e => { filters.active_assets_only = e.target.value; load(); });
