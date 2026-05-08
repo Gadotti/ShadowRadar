@@ -197,6 +197,7 @@ function buildAssessmentChart(Chart, canvas, dist) {
               return chart.data.labels.map((label, i) => ({
                 text: `${label} (${total ? Math.round(chart.data.datasets[0].data[i] / total * 100) : 0}%)`,
                 fillStyle: chart.data.datasets[0].backgroundColor[i],
+                fontColor: Chart.defaults.color,
                 index: i,
               }));
             },
