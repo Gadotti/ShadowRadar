@@ -371,3 +371,102 @@ tbody td            { padding: 10px 14px; vertical-align: middle; }
 }
 
 .page-title { font-size: 20px; font-weight: 600; }
+
+/* ===== CUSTOM SELECT ===== */
+.custom-select-wrapper { position: relative; }
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: inherit;
+  padding: 7px 12px;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: background-color var(--transition), border-color var(--transition);
+}
+
+.custom-select-trigger:hover {
+  background: var(--color-surface-hover);
+  border-color: rgba(var(--rgb-text-muted), 0.4);
+}
+
+.custom-select-trigger.open {
+  background: var(--color-surface-hover);
+  border-color: rgba(var(--rgb-primary), 0.5);
+}
+
+.custom-select-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition: transform 0.2s ease;
+}
+
+.custom-select-trigger.open .custom-select-chevron { transform: rotate(180deg); }
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
+  padding: 4px;
+  z-index: 200;
+  display: none;
+}
+
+.custom-select-dropdown.open {
+  display: block;
+  animation: custom-select-in 0.15s ease forwards;
+}
+
+@keyframes custom-select-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--color-text);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 7px 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.12s ease;
+}
+
+.custom-select-option:hover    { background: var(--color-surface-hover); }
+.custom-select-option.selected { font-weight: 500; }
+
+.custom-select-option-icon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.custom-select-option.selected .custom-select-option-icon { opacity: 1; }

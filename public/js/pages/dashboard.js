@@ -1,4 +1,5 @@
 import * as api from '../api.js';
+import { initCustomSelect } from '../components/custom-select.js';
 
 // ── Colour constants ────────────────────────────────────────────────────────
 const SEV_COLORS = {
@@ -27,27 +28,17 @@ function applyChartDefaults(Chart) {
 
 // ── HTML builders ────────────────────────────────────────────────────────────
 
-function filterPanelHTML(assets) {
-  const assetOpts = assets.map(a =>
-    `<option value="${a.id}">${escHtml(a.name)}${a.tag ? ' ' + escHtml(a.tag) : ''}</option>`
-  ).join('');
-
+function filterPanelHTML() {
   return `
     <div class="card mb-16">
       <div class="filter-row" style="flex-wrap:wrap;align-items:flex-end">
         <div class="form-group" style="margin:0;min-width:200px;flex:1">
           <label style="font-size:12px;margin-bottom:4px">Ativos</label>
-          <select id="f-assets" multiple size="3" style="height:auto">${assetOpts}</select>
+          <div class="custom-select-wrapper" id="f-assets"></div>
         </div>
         <div class="form-group" style="margin:0;min-width:160px">
           <label style="font-size:12px;margin-bottom:4px">Período</label>
-          <select id="f-period">
-            <option value="">Todos os períodos</option>
-            <option value="30d">Últimos 30 dias</option>
-            <option value="90d">Últimos 90 dias</option>
-            <option value="180d">Últimos 180 dias</option>
-            <option value="custom">Personalizado</option>
-          </select>
+          <div class="custom-select-wrapper" id="f-period"></div>
         </div>
         <div id="custom-dates" class="filter-row" style="display:none;align-items:flex-end;gap:8px">
           <div class="form-group" style="margin:0">
@@ -61,13 +52,7 @@ function filterPanelHTML(assets) {
         </div>
         <div class="form-group" style="margin:0;min-width:160px">
           <label style="font-size:12px;margin-bottom:4px">Severidade</label>
-          <select id="f-severity" multiple size="3" style="height:auto">
-            <option value="CRITICAL">CRITICAL</option>
-            <option value="HIGH">HIGH</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="LOW">LOW</option>
-            <option value="NONE">NONE</option>
-          </select>
+          <div class="custom-select-wrapper" id="f-severity"></div>
         </div>
         <div class="flex gap-8">
           <button class="btn btn-primary" id="btn-apply">Aplicar</button>
@@ -257,7 +242,7 @@ export async function render(container) {
 
   container.innerHTML = `
     <div class="page-header"><h1 class="page-title">Dashboard</h1></div>
-    ${filterPanelHTML(allAssets)}
+    ${filterPanelHTML()}
     ${kpiCardsHTML()}
     ${chartsHTML()}`;
 
@@ -271,17 +256,47 @@ export async function render(container) {
 
   let charts = {};
 
+  const assetsSelect = initCustomSelect(container.querySelector('#f-assets'), {
+    options:     allAssets.map(a => ({ value: String(a.id), label: a.name + (a.tag ? ' ' + a.tag : '') })),
+    multiple:    true,
+    placeholder: 'Todos os ativos',
+  });
+
+  const periodSelect = initCustomSelect(container.querySelector('#f-period'), {
+    options:  [
+      { value: '',       label: 'Todos os períodos' },
+      { value: '30d',    label: 'Últimos 30 dias'   },
+      { value: '90d',    label: 'Últimos 90 dias'   },
+      { value: '180d',   label: 'Últimos 180 dias'  },
+      { value: 'custom', label: 'Personalizado'     },
+    ],
+    value:    '',
+    onChange: v => {
+      const customDates = container.querySelector('#custom-dates');
+      if (customDates) customDates.style.display = v === 'custom' ? 'flex' : 'none';
+    },
+  });
+
+  const severitySelect = initCustomSelect(container.querySelector('#f-severity'), {
+    options:     [
+      { value: 'CRITICAL', label: 'CRITICAL' },
+      { value: 'HIGH',     label: 'HIGH'     },
+      { value: 'MEDIUM',   label: 'MEDIUM'   },
+      { value: 'LOW',      label: 'LOW'      },
+      { value: 'NONE',     label: 'NONE'     },
+    ],
+    multiple:    true,
+    placeholder: 'Todas as severidades',
+  });
+
   // ── Filter reader ─────────────────────────────────────────────────────────
   function readFilters() {
     const params = {};
-    const assetEl    = container.querySelector('#f-assets');
-    const periodEl   = container.querySelector('#f-period');
-    const severityEl = container.querySelector('#f-severity');
 
-    const selectedAssets = assetEl ? [...assetEl.selectedOptions].map(o => o.value) : [];
+    const selectedAssets = assetsSelect.getValues();
     if (selectedAssets.length) params.asset_ids = selectedAssets.join(',');
 
-    const period = periodEl?.value;
+    const period = periodSelect.getValue();
     if (period) {
       params.period = period;
       if (period === 'custom') {
@@ -292,7 +307,7 @@ export async function render(container) {
       }
     }
 
-    const selectedSev = severityEl ? [...severityEl.selectedOptions].map(o => o.value) : [];
+    const selectedSev = severitySelect.getValues();
     if (selectedSev.length) params.severity = selectedSev.join(',');
 
     return params;
@@ -327,23 +342,15 @@ export async function render(container) {
   }
 
   // ── Events ────────────────────────────────────────────────────────────────
-  container.querySelector('#f-period')?.addEventListener('change', e => {
-    const customDates = container.querySelector('#custom-dates');
-    if (customDates) customDates.style.display = e.target.value === 'custom' ? 'flex' : 'none';
-  });
-
   container.querySelector('#btn-apply')?.addEventListener('click', loadData);
 
   container.querySelector('#btn-clear')?.addEventListener('click', () => {
-    [...(container.querySelectorAll('#f-assets option, #f-severity option'))].forEach(o => o.selected = false);
-    const periodEl = container.querySelector('#f-period');
-    if (periodEl) periodEl.value = '';
+    [assetsSelect, periodSelect, severitySelect].forEach(s => s.reset());
     const fromEl = container.querySelector('#f-date-from');
     if (fromEl) fromEl.value = '';
     const toEl = container.querySelector('#f-date-to');
     if (toEl) toEl.value = '';
-    const customDates = container.querySelector('#custom-dates');
-    if (customDates) customDates.style.display = 'none';
+    container.querySelector('#custom-dates').style.display = 'none';
     loadData();
   });
 

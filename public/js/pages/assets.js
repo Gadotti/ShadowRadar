@@ -1,4 +1,5 @@
 import * as api from '../api.js';
+import { initCustomSelect } from '../components/custom-select.js';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -64,11 +65,7 @@ function pageHTML(isEditor) {
     <div class="card mb-16">
       <div class="flex gap-8" style="flex-wrap:wrap">
         <input type="text" id="search" placeholder="Buscar por nome, tag ou descrição…" style="flex:1;min-width:180px">
-        <select id="filter-active" style="width:130px">
-          <option value="all">Todos</option>
-          <option value="1">Ativos</option>
-          <option value="0">Inativos</option>
-        </select>
+        <div class="custom-select-wrapper" id="filter-wrapper" style="width:130px"></div>
       </div>
     </div>
     <div id="table-area"></div>
@@ -200,7 +197,12 @@ export function render(container, user) {
 
   const tableArea = container.querySelector('#table-area');
   const searchEl  = container.querySelector('#search');
-  const filterEl  = container.querySelector('#filter-active');
+
+  const filterSelect = initCustomSelect(container.querySelector('#filter-wrapper'), {
+    options:  [{ value: 'all', label: 'Todos' }, { value: '1', label: 'Ativos' }, { value: '0', label: 'Inativos' }],
+    value:    'all',
+    onChange: v => { active = v; page = 1; load(); },
+  });
 
   // ── Load & render table ──────────────────────────────────────────────────
 
@@ -400,7 +402,6 @@ export function render(container, user) {
     search = '';
     load();
   });
-  filterEl.addEventListener('change', () => { page = 1; active = filterEl.value; load(); });
   container.querySelector('#btn-new')?.addEventListener('click', () => openModal(null));
 
   load();

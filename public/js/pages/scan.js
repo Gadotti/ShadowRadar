@@ -1,4 +1,5 @@
 import * as api from '../api.js';
+import { initCustomSelect } from '../components/custom-select.js';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -154,12 +155,8 @@ export async function render(container) {
           </div>
         </div>
         <div class="form-group" id="asset-select-group" style="display:none">
-          <label for="asset-select">Ativo</label>
-          <select id="asset-select">
-            ${activeAssets.map(a =>
-              `<option value="${a.id}">${escHtml(a.name)}${a.tag ? ' ' + escHtml(a.tag) : ''}</option>`
-            ).join('')}
-          </select>
+          <label>Ativo</label>
+          <div class="custom-select-wrapper" id="asset-select"></div>
         </div>
       </div>
     </div>
@@ -185,6 +182,12 @@ export async function render(container) {
 
   const execBody    = container.querySelector('#exec-body');
   const historyBody = container.querySelector('#history-body');
+
+  const assetSelectCtrl = initCustomSelect(container.querySelector('#asset-select'), {
+    options:     activeAssets.map(a => ({ value: String(a.id), label: a.name + (a.tag ? ' ' + a.tag : '') })),
+    value:       String(activeAssets[0]?.id ?? ''),
+    placeholder: 'Nenhum ativo disponível',
+  });
 
   // ── Scope radio toggle ──────────────────────────────────────────────────
   container.querySelectorAll('input[name="scope"]').forEach(radio => {
@@ -249,9 +252,7 @@ export async function render(container) {
 
   async function onRun() {
     const scope   = container.querySelector('input[name="scope"]:checked')?.value;
-    const assetId = scope === 'specific'
-      ? container.querySelector('#asset-select')?.value
-      : undefined;
+    const assetId = scope === 'specific' ? assetSelectCtrl.getValue() : undefined;
 
     const runBtn = container.querySelector('#run-btn');
     if (runBtn) { runBtn.disabled = true; runBtn.textContent = 'Iniciando…'; }

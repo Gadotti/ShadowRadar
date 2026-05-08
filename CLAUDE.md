@@ -63,7 +63,7 @@ public/
     app.js       # Hash-router entry point — maps hash routes to page modules
     api.js       # Centralised fetch wrapper (redirects to #/login on 401)
     pages/       # One module per page, each exports render(el, user)
-    components/  # Reusable UI pieces (sidebar)
+    components/  # Reusable UI pieces (sidebar, custom-select)
   css/
     base.css       # Tokens (:root), reset, typography, utilities
     layout.css     # #sidebar, #content, sidebar component
@@ -143,6 +143,44 @@ After every code change, run `npm test` and inspect the output. If any test fail
 2. Fix the code. If the code it's not the problem, fix the test itself if necessary (never disable or delete the failing test).
 3. Run `npm test` again.
 4. Repeat until all tests pass before considering the task done.
+
+---
+
+## Frontend UI Patterns
+
+### Combobox / Select
+
+**Never use native `<select>` elements.** All dropdowns must use the custom combobox component from `public/js/components/custom-select.js`.
+
+**Usage:**
+1. Place an empty `<div class="custom-select-wrapper" id="my-select"></div>` in the HTML template.
+2. Call `initCustomSelect(el, config)` after the HTML is injected into the DOM.
+
+```js
+import { initCustomSelect } from '../components/custom-select.js';
+
+// Single select
+const ctrl = initCustomSelect(container.querySelector('#my-select'), {
+  options:  [{ value: 'a', label: 'Option A' }, ...],
+  value:    'a',            // initial selected value
+  onChange: v => { ... },   // called on every selection
+});
+
+// Multi-select
+const ctrl = initCustomSelect(container.querySelector('#my-select'), {
+  options:     [...],
+  multiple:    true,
+  values:      [],                   // initial selections
+  placeholder: 'Todos os itens',     // shown when nothing selected
+  onChange:    vs => { ... },        // called with string[]
+});
+```
+
+**Controller API:** `getValue()`, `setValue(v)`, `getValues()`, `setValues(vs)`, `setOptions(opts)`, `reset()`, `destroy()`.
+
+- Call `reset()` when clearing filters.
+- Call `destroy()` when removing a modal that contains a select (prevents listener leak).
+- Styles live in `public/css/components.css` under `/* ===== CUSTOM SELECT ===== */`.
 
 ---
 

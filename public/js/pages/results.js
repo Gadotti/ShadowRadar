@@ -1,4 +1,5 @@
 import * as api from '../api.js';
+import { initCustomSelect } from '../components/custom-select.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -72,7 +73,7 @@ function scanIndicatorHTML(lastScan) {
 
 // ── HTML builders ──────────────────────────────────────────────────────────
 
-function pageHTML(allAssets) {
+function pageHTML() {
   return `
     <div class="page-header">
       <div>
@@ -88,19 +89,9 @@ function pageHTML(allAssets) {
     <div class="card mb-16">
       <div class="filter-row mb-12">
         <input type="text" id="f-search" placeholder="Buscar CVE ID ou descrição…" style="flex:1;min-width:160px">
-        <select id="f-asset" style="width:180px">
-          <option value="">Todos os ativos</option>
-          ${allAssets.map(a=>`<option value="${a.id}">${escHtml(a.name)}${a.tag?' '+escHtml(a.tag):''}</option>`).join('')}
-        </select>
-        <select id="f-ai" style="width:150px">
-          <option value="">Com/sem AI</option>
-          <option value="true">Com avaliação AI</option>
-          <option value="false">Sem avaliação AI</option>
-        </select>
-        <select id="f-active" style="width:130px">
-          <option value="">Ativos/Inativos</option>
-          <option value="true">Somente ativos</option>
-        </select>
+        <div class="custom-select-wrapper" id="f-asset" style="width:180px"></div>
+        <div class="custom-select-wrapper" id="f-ai" style="width:150px"></div>
+        <div class="custom-select-wrapper" id="f-active" style="width:130px"></div>
         <input type="date" id="f-after" title="Publicado após" style="width:140px">
         <input type="date" id="f-before" title="Publicado até" style="width:140px">
         <button class="btn btn-secondary btn-sm" id="clear-filters">Limpar</button>
@@ -270,11 +261,8 @@ function assessModalHTML(cve) {
     <div class="modal-body">
       <form id="assess-form" novalidate>
         <div class="form-group">
-          <label for="assess-val">Avaliação</label>
-          <select id="assess-val">
-            <option value="">— sem avaliação —</option>
-            ${ASSESSMENT_OPTS.map(o=>`<option value="${o}"${cve.user_assessment===o?' selected':''}>${o}</option>`).join('')}
-          </select>
+          <label>Avaliação</label>
+          <div class="custom-select-wrapper" id="assess-val"></div>
         </div>
         <div class="form-group">
           <label for="assess-notes">Observações</label>
@@ -300,7 +288,23 @@ export async function render(container, user) {
   let allAssets = [];
   try { allAssets = (await api.get('/assets', { page_size: '100' })).items; } catch {}
 
-  container.innerHTML = pageHTML(allAssets);
+  container.innerHTML = pageHTML();
+
+  const assetSelect = initCustomSelect(container.querySelector('#f-asset'), {
+    options:  [{ value: '', label: 'Todos os ativos' }, ...allAssets.map(a => ({ value: String(a.id), label: a.name + (a.tag ? ' ' + a.tag : '') }))],
+    value:    '',
+    onChange: v => { filters.asset_id = v; load(); },
+  });
+  const aiSelect = initCustomSelect(container.querySelector('#f-ai'), {
+    options:  [{ value: '', label: 'Com/sem AI' }, { value: 'true', label: 'Com avaliação AI' }, { value: 'false', label: 'Sem avaliação AI' }],
+    value:    '',
+    onChange: v => { filters.has_ai_assessment = v; load(); },
+  });
+  const activeSelect = initCustomSelect(container.querySelector('#f-active'), {
+    options:  [{ value: '', label: 'Ativos/Inativos' }, { value: 'true', label: 'Somente ativos' }],
+    value:    '',
+    onChange: v => { filters.active_assets_only = v; load(); },
+  });
 
   // Lifecycle marker — removed when navigate() clears content.innerHTML
   const marker = document.createElement('div');
@@ -416,7 +420,13 @@ export async function render(container, user) {
     overlay.innerHTML = assessModalHTML(cve);
     document.body.appendChild(overlay);
 
-    const close = () => { document.removeEventListener('keydown', onEsc); overlay.remove(); };
+    const assessSelect = initCustomSelect(overlay.querySelector('#assess-val'), {
+      options:     [{ value: '', label: '— sem avaliação —' }, ...ASSESSMENT_OPTS.map(o => ({ value: o, label: o }))],
+      value:       cve.user_assessment || '',
+      placeholder: '— sem avaliação —',
+    });
+
+    const close = () => { assessSelect.destroy(); document.removeEventListener('keydown', onEsc); overlay.remove(); };
     const onEsc = e => { if (e.key === 'Escape') close(); };
     overlay.querySelector('.modal-close').addEventListener('click', close);
     overlay.querySelector('#assess-cancel').addEventListener('click', close);
@@ -433,7 +443,7 @@ export async function render(container, user) {
 
       try {
         const updated = await api.put(`/cves/${cve.id}/assessment`, {
-          user_assessment: overlay.querySelector('#assess-val').value || null,
+          user_assessment: assessSelect.getValue() || null,
           user_notes: overlay.querySelector('#assess-notes').value.trim() || null,
         });
         const idx = listItems.findIndex(c => c.id === cve.id);
@@ -465,9 +475,6 @@ export async function render(container, user) {
     filters.search = '';
     load();
   });
-  container.querySelector('#f-asset')?.addEventListener('change', e => { filters.asset_id = e.target.value; load(); });
-  container.querySelector('#f-ai')?.addEventListener('change', e => { filters.has_ai_assessment = e.target.value; load(); });
-  container.querySelector('#f-active')?.addEventListener('change', e => { filters.active_assets_only = e.target.value; load(); });
   container.querySelector('#f-after')?.addEventListener('change', e => { filters.published_after = e.target.value; load(); });
   container.querySelector('#f-before')?.addEventListener('change', e => { filters.published_before = e.target.value; load(); });
 
@@ -480,7 +487,8 @@ export async function render(container, user) {
 
   container.querySelector('#clear-filters')?.addEventListener('click', () => {
     Object.assign(filters, { search:'', asset_id:'', severity:[], user_assessment:[], has_ai_assessment:'', published_after:'', published_before:'', active_assets_only:'' });
-    ['#f-search','#f-asset','#f-ai','#f-active','#f-after','#f-before'].forEach(s => { const el = container.querySelector(s); if(el) el.value=''; });
+    ['#f-search','#f-after','#f-before'].forEach(s => { const el = container.querySelector(s); if(el) el.value=''; });
+    [assetSelect, aiSelect, activeSelect].forEach(s => s.reset());
     container.querySelectorAll('.sev-check,.ass-check').forEach(c => c.checked = false);
     load();
   });
