@@ -106,6 +106,13 @@ Two mechanisms, used in different contexts:
 - `GET /api/v1/export` — returns a JSON security report (all assets + CVEs, risk level computed). Accepts JWT cookie or `X-API-Key`.
 - `POST /api/v1/assets/sync` — upserts an array of assets from an external system. Accepts `X-API-Key` only. Never overwrites `cve_start_date` if already set in the DB.
 
+### API documentation endpoints
+
+- `GET /api/docs` — Swagger UI (interactive API docs). Public, no authentication required. Served by `src/api/docsRoutes.js`. Overrides Helmet's CSP for this route only to allow Swagger UI assets from `unpkg.com`.
+- `GET /api/docs/spec` — OpenAPI 3.0 spec as JSON, built inline by `buildSpec()` in `docsRoutes.js`. Update this function whenever endpoints are added, removed, or changed.
+
+Both routes are registered in `server.js` **before** `app.use('/api', authenticate)` so they remain publicly accessible. The sidebar shows them as external links (open in new tab) only to `editor` role users.
+
 ### Environment variables
 
 ```

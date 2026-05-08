@@ -29,6 +29,9 @@ function buildApp() {
   app.get('/api/health', (_req, res) => res.json({ status: 'ok', version }));
   app.use('/api/auth', authRoutes);
 
+  // API documentation — public, no auth required
+  app.use('/api/docs', require('./api/docsRoutes'));
+
   // External integration endpoints — own auth (JWT cookie or X-API-Key), before JWT gate
   app.use('/api/v1/export',      require('./api/exportRoutes'));
   app.use('/api/v1/assets/sync', require('./api/syncRoutes'));

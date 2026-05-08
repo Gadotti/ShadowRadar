@@ -8,6 +8,8 @@ const MENU = [
   { path: '/config/nist', icon: '⚙', label: 'Config NIST',    editorOnly: true },
   { path: '/config/ai',   icon: '✦', label: 'Config AI',      editorOnly: true },
   { path: '/settings',    icon: '⚿', label: 'API Keys',       editorOnly: true },
+  { href: '/api/docs',      icon: '⊡', label: 'API Docs',       editorOnly: true },
+  { href: '/api/docs/spec', icon: '≡', label: 'API Spec (JSON)', editorOnly: true },
 ];
 
 let el;
@@ -48,12 +50,20 @@ function renderNav(user, route) {
   const nav = document.getElementById('sidebar-nav');
   if (!nav) return;
   const items = MENU.filter(i => !i.editorOnly || user?.role === 'editor');
-  nav.innerHTML = items.map(i => `
+  nav.innerHTML = items.map(i => {
+    if (i.href) {
+      return `
+    <a class="sidebar-item" href="${i.href}" target="_blank" rel="noopener" title="${i.label}">
+      <span class="sidebar-item-icon">${i.icon}</span>
+      <span class="sidebar-item-label">${i.label}</span>
+    </a>`;
+    }
+    return `
     <a class="sidebar-item${route === i.path ? ' active' : ''}" href="#${i.path}" title="${i.label}">
       <span class="sidebar-item-icon">${i.icon}</span>
       <span class="sidebar-item-label">${i.label}</span>
-    </a>
-  `).join('');
+    </a>`;
+  }).join('');
 }
 
 function renderFooter(user) {
