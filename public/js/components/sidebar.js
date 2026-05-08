@@ -32,7 +32,7 @@ export function update(user, route) {
 function renderShell() {
   el.innerHTML = `
     <div class="sidebar-header">
-      <span class="sidebar-logo">SR</span>
+      <img class="sidebar-logo" src="/favicon.svg" alt="ShadowRadar" width="28" height="28">
       <span class="sidebar-title">ShadowRadar</span>
       <button class="sidebar-toggle" id="sidebar-toggle" title="Colapsar menu">‹</button>
     </div>
