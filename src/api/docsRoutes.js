@@ -82,7 +82,7 @@ function buildSpec() {
             current_version: { type: 'string', example: '1.25.3' },
             description: { type: 'string' },
             active: { type: 'boolean', default: true },
-            cve_start_date: { type: 'string', format: 'date', example: '2024-01-01' },
+            cve_start_date: { type: 'string', format: 'date', nullable: true, example: '2024-01-01' },
           },
         },
         Cve: {
@@ -887,7 +887,7 @@ function buildSpec() {
                           description:     { type: 'string', nullable: true },
                           url:             { type: 'string', nullable: true },
                           current_version: { type: 'string', example: '1.25.3' },
-                          cve_start_date:  { type: 'string', format: 'date', description: 'Required when creating a new asset.', example: '2024-01-01' },
+                          cve_start_date:  { type: 'string', format: 'date', nullable: true, example: '2024-01-01' },
                           active:          { type: 'boolean', default: true },
                         },
                       },

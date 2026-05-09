@@ -162,8 +162,8 @@ function modalHTML(asset) {
               <input type="text" id="m-version" value="${escHtml(v.current_version || '')}" required>
             </div>
             <div class="form-group">
-              <label for="m-cve-date">Data Inicial CVEs *</label>
-              <input type="date" id="m-cve-date" value="${v.cve_start_date || ''}" max="${today}" required>
+              <label for="m-cve-date">Data Inicial CVEs</label>
+              <input type="date" id="m-cve-date" value="${v.cve_start_date || ''}" max="${today}">
             </div>
           </div>
           <div class="form-group" style="flex-direction:row;align-items:center;gap:12px;margin-bottom:20px">
@@ -352,8 +352,7 @@ export function render(container, user) {
       // Client-side validation
       if (!name)    { setError(errorEl, 'Nome é obrigatório.'); return; }
       if (!version) { setError(errorEl, 'Versão é obrigatória.'); return; }
-      if (!cveDate) { setError(errorEl, 'Data Inicial de CVEs é obrigatória.'); return; }
-      if (cveDate > new Date().toISOString().slice(0, 10)) {
+      if (cveDate && cveDate > new Date().toISOString().slice(0, 10)) {
         setError(errorEl, 'Data Inicial de CVEs não pode ser futura.'); return;
       }
 
@@ -366,7 +365,7 @@ export function render(container, user) {
         description: desc || null,
         url: url || null,
         current_version: version,
-        cve_start_date: cveDate,
+        cve_start_date: cveDate || null,
         active: isActive ? 1 : 0,
       };
 

@@ -10,12 +10,14 @@ function validateAssetData({ name, current_version, cve_start_date }) {
   if (!current_version || !String(current_version).trim()) {
     throw new ValidationError('current_version is required');
   }
-  if (!cve_start_date || !/^\d{4}-\d{2}-\d{2}$/.test(cve_start_date)) {
-    throw new ValidationError('cve_start_date must be in YYYY-MM-DD format');
-  }
-  const today = new Date().toISOString().slice(0, 10);
-  if (cve_start_date > today) {
-    throw new ValidationError('cve_start_date cannot be a future date');
+  if (cve_start_date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(cve_start_date)) {
+      throw new ValidationError('cve_start_date must be in YYYY-MM-DD format');
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (cve_start_date > today) {
+      throw new ValidationError('cve_start_date cannot be a future date');
+    }
   }
 }
 

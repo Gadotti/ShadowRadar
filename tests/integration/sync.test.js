@@ -77,14 +77,17 @@ describe('sync routes', () => {
       expect(row.cve_start_date).toBe('2022-01-01');
     });
 
-    test('reports error for new asset missing cve_start_date', async () => {
+    test('creates new asset without cve_start_date (optional field)', async () => {
       const r = await req(baseUrl, 'POST', '/api/v1/assets/sync', {
         apiKey: plainApiKey,
         body: { assets: [{ name: 'NoDate', tag: '#nd', current_version: '1.0' }] },
       });
       expect(r.status).toBe(200);
-      expect(r.data.errors.length).toBe(1);
-      expect(r.data.errors[0].error.includes('cve_start_date')).toBe(true);
+      expect(r.data.created).toBe(1);
+      expect(r.data.errors.length).toBe(0);
+      const db = getDb();
+      const row = db.prepare("SELECT cve_start_date FROM assets WHERE name='NoDate'").get();
+      expect(row.cve_start_date).toBeNull();
     });
 
     test('reports error for asset missing name', async () => {

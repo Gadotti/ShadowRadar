@@ -30,6 +30,14 @@ describe('assetService', () => {
         .toThrow(ValidationError);
     });
 
+    test('creates asset without cve_start_date (optional)', () => {
+      const asset = assetService.createAsset(db, {
+        name: 'NoDate', current_version: '1.0',
+      });
+      expect(asset.name).toBe('NoDate');
+      expect(asset.cve_start_date).toBeNull();
+    });
+
     test('throws ValidationError for invalid cve_start_date format', () => {
       expect(() => assetService.createAsset(db, { name: 'App', current_version: '1.0', cve_start_date: '01-01-2024' }))
         .toThrow(ValidationError);

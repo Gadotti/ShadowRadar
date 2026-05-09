@@ -51,7 +51,7 @@ function create(db, { name, tag, description, url, current_version, cve_start_da
   const result = db.prepare(`
     INSERT INTO assets (name, tag, description, url, current_version, cve_start_date, active)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(name, tag ?? null, description ?? null, url ?? null, current_version, cve_start_date, active ? 1 : 0);
+  `).run(name, tag ?? null, description ?? null, url ?? null, current_version, cve_start_date ?? null, active ? 1 : 0);
   return result.lastInsertRowid;
 }
 
@@ -61,7 +61,7 @@ function update(db, id, { name, tag, description, url, current_version, cve_star
     SET name=?, tag=?, description=?, url=?, current_version=?, cve_start_date=?, active=?,
         updated_at=strftime('%Y-%m-%dT%H:%M:%SZ','now')
     WHERE id=?
-  `).run(name, tag ?? null, description ?? null, url ?? null, current_version, cve_start_date, active ? 1 : 0, id);
+  `).run(name, tag ?? null, description ?? null, url ?? null, current_version, cve_start_date ?? null, active ? 1 : 0, id);
 }
 
 function remove(db, id) {

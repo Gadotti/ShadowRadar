@@ -9,17 +9,7 @@ const router = express.Router();
 
 router.use(authenticateApiKey);
 
-function validateForCreate(item) {
-  if (!item.name || typeof item.name !== 'string' || !item.name.trim())
-    return 'name is required';
-  if (!item.current_version || typeof item.current_version !== 'string' || !item.current_version.trim())
-    return 'current_version is required';
-  if (!item.cve_start_date)
-    return 'cve_start_date is required for new assets';
-  return null;
-}
-
-function validateForUpdate(item) {
+function validateUpsert(item) {
   if (!item.name || typeof item.name !== 'string' || !item.name.trim())
     return 'name is required';
   if (!item.current_version || typeof item.current_version !== 'string' || !item.current_version.trim())
@@ -51,22 +41,21 @@ router.post('/', (req, res) => {
 
       const existing = assetRepository.findByNameAndOptionalTag(db, name, tag);
 
+      const validationErr = validateUpsert({ ...item, name, tag });
+      if (validationErr) { errors.push({ index: i, name, tag, error: validationErr }); continue; }
+
       if (!existing) {
-        const createErr = validateForCreate({ ...item, name, tag });
-        if (createErr) { errors.push({ index: i, name, tag, error: createErr }); continue; }
         assetRepository.create(db, {
           name,
           tag,
           description:     item.description ?? null,
           url:             item.url ?? null,
           current_version: item.current_version.trim(),
-          cve_start_date:  item.cve_start_date,
+          cve_start_date:  item.cve_start_date ?? null,
           active,
         });
         created++;
       } else {
-        const updateErr = validateForUpdate({ ...item, name, tag });
-        if (updateErr) { errors.push({ index: i, name, tag, error: updateErr }); continue; }
         // Never overwrite cve_start_date if already set in the database
         const cveStartDate = existing.cve_start_date || item.cve_start_date || null;
         assetRepository.update(db, existing.id, {
