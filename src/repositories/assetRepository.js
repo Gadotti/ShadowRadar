@@ -20,7 +20,8 @@ function findAll(db, { search = null, active = 'all', page = 1, pageSize = 20 } 
 
   const offset = (page - 1) * pageSize;
   const items = db.prepare(`
-    SELECT a.*, COUNT(c.id) AS cve_count, MAX(c.scanned_at) AS last_scan
+    SELECT a.*, COUNT(c.id) AS cve_count,
+           COALESCE(MAX(c.scanned_at), a.last_scanned_pub_end) AS last_scan
     FROM assets a
     LEFT JOIN asset_cves c ON c.asset_id = a.id
     ${where}

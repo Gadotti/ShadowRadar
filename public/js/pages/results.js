@@ -87,7 +87,7 @@ function pageHTML() {
     </div>
 
     <div class="card mb-16">
-      <div class="filter-row mb-12">
+      <div class="filter-row mb-16">
         <input type="text" id="f-search" placeholder="Buscar CVE ID ou descrição…" style="flex:1;min-width:160px">
         <div class="custom-select-wrapper" id="f-asset" style="width:180px"></div>
         <div class="custom-select-wrapper" id="f-ai" style="width:150px"></div>
@@ -159,7 +159,7 @@ function listTableHTML(items, total, { page, page_size, order_by, order_dir }, i
       <td>${severityBadge(c.severity)}</td>
       <td>${c.cvss_score!=null?c.cvss_score.toFixed(1):'—'}</td>
       <td class="text-muted">${c.published_at?c.published_at.slice(0,10):'—'}</td>
-      <td class="assessment-badge">${assessmentBadge(c.user_assessment)}</td>
+      <td class="assessment-badge${isEditor ? ' assessment-editable' : ''}"${isEditor ? ` data-action="inline-assess"` : ''}>${assessmentBadge(c.user_assessment)}</td>
       <td style="text-align:center">${c.ai_assessment?'<span style="color:var(--color-success)" title="Com avaliação AI">✓</span>':'<span class="text-muted">—</span>'}</td>
       <td>
         <div class="flex gap-8">
@@ -385,6 +385,7 @@ export async function render(container, user) {
       const action = btn.dataset.action;
       if (action === 'detail') openDetail(cve);
       else if (action === 'assess') openAssessModal(cve);
+      else if (action === 'inline-assess') inlineAssess(cve, btn);
       else if (action === 'ai') showToast('Execute um scan com AI habilitado para reprocessar este CVE.', 'info');
     });
   }
@@ -462,6 +463,87 @@ export async function render(container, user) {
         submitBtn.textContent = 'Salvar';
       }
     });
+  }
+
+  // ── Inline assessment ─────────────────────────────────────────────────────
+  function inlineAssess(cve, cell) {
+    if (cell.dataset.assessing) return;
+    cell.dataset.assessing = '1';
+    const original = cell.innerHTML;
+
+    // Portal: render outside the table so the dropdown is never clipped by
+    // the table wrapper's overflow. Position fixed over the cell.
+    const rect = cell.getBoundingClientRect();
+    const width = Math.max(rect.width, 180);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'custom-select-wrapper assessment-inline-select';
+    wrapper.style.cssText = `position:fixed;top:${rect.top}px;left:${rect.left}px;width:${width}px;z-index:300`;
+    cell.innerHTML = '<span class="text-muted" style="font-size:11px">…</span>';
+    document.body.appendChild(wrapper);
+
+    let settled = false;
+    let ctrl;
+
+    function cleanup() {
+      wrapper.remove();
+      delete cell.dataset.assessing;
+      document.removeEventListener('keydown', onEsc);
+      document.removeEventListener('click', onClickOutside);
+    }
+
+    function cancel() {
+      if (settled) return;
+      settled = true;
+      ctrl.destroy();
+      cell.innerHTML = original;
+      cleanup();
+    }
+
+    async function save(v) {
+      if (settled) return;
+      settled = true;
+      ctrl.destroy();
+      cleanup();
+      cell.innerHTML = '<span class="text-muted" style="font-size:11px">Salvando…</span>';
+      try {
+        const updated = await api.put(`/cves/${cve.id}/assessment`, {
+          user_assessment: v || null,
+          user_notes: cve.user_notes || null,
+        });
+        const idx = listItems.findIndex(c => c.id === cve.id);
+        if (idx !== -1) Object.assign(listItems[idx], updated);
+        cell.innerHTML = assessmentBadge(updated.user_assessment);
+        if (detailPanel?.classList.contains('open')) openDetail(listItems.find(c => c.id === cve.id) || cve);
+        showToast('Avaliação salva.', 'success');
+      } catch (err) {
+        cell.innerHTML = original;
+        showToast(err.message || 'Erro ao salvar.', 'error');
+      }
+    }
+
+    const onEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      e.stopImmediatePropagation();
+      cancel();
+    };
+    document.addEventListener('keydown', onEsc);
+
+    const onClickOutside = (e) => { if (!wrapper.contains(e.target)) cancel(); };
+    setTimeout(() => document.addEventListener('click', onClickOutside), 0);
+
+    ctrl = initCustomSelect(wrapper, {
+      options: [
+        { value: '', label: '— Pending —' },
+        ...ASSESSMENT_OPTS.map(o => ({ value: o, label: o })),
+      ],
+      value: cve.user_assessment || '',
+      onChange: (v) => {
+        if ((v || null) === (cve.user_assessment || null)) { cancel(); return; }
+        save(v);
+      },
+    });
+
+    requestAnimationFrame(() => wrapper.querySelector('.custom-select-trigger')?.click());
   }
 
   // ── Filter bindings ───────────────────────────────────────────────────────
