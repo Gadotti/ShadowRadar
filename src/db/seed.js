@@ -36,7 +36,7 @@ const CONFIG_DEFAULTS = [
   { key: 'nist.api_key',      value: '' },
   { key: 'ai.enabled',        value: 'false' },
   { key: 'ai.api_url',        value: 'https://api.anthropic.com' },
-  { key: 'ai.api_key',        value: '' },
+  { key: 'ai.api_key_env',    value: '' },
   { key: 'ai.model',          value: 'claude-sonnet-4-6' },
   { key: 'ai.max_tokens',     value: '16000' },
   { key: 'ai.temperature',    value: '0' },

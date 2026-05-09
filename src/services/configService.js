@@ -35,8 +35,7 @@ function getAiConfig(db) {
     enabled:     (configRepository.get(db, 'ai.enabled') || 'false') === 'true',
     provider:    AI_PROVIDER,
     api_url:     configRepository.get(db, 'ai.api_url') || AI_BASE_URL,
-    api_key:     '****',
-    api_key_set: Boolean(configRepository.get(db, 'ai.api_key')),
+    api_key_env: configRepository.get(db, 'ai.api_key_env') || '',
     model:       configRepository.get(db, 'ai.model') || 'claude-sonnet-4-6',
     max_tokens:  parseInt(configRepository.get(db, 'ai.max_tokens') || '16000'),
     temperature: parseFloat(configRepository.get(db, 'ai.temperature') || '0'),
@@ -44,12 +43,17 @@ function getAiConfig(db) {
   };
 }
 
-function saveAiConfig(db, { enabled, api_url, api_key, model, max_tokens, temperature, batch_size }) {
+function saveAiConfig(db, { enabled, api_url, api_key_env, model, max_tokens, temperature, batch_size }) {
   const enabledBool = enabled === true || enabled === 'true';
 
   const resolvedUrl = api_url || AI_BASE_URL;
   try { new URL(resolvedUrl); } catch {
     throw new ValidationError('api_url must be a valid URL');
+  }
+
+  const envVar = api_key_env || '';
+  if (envVar && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(envVar)) {
+    throw new ValidationError(`api_key_env must be a valid environment variable name, got: ${envVar}`);
   }
 
   const mt = parseInt(max_tokens);
@@ -67,18 +71,15 @@ function saveAiConfig(db, { enabled, api_url, api_key, model, max_tokens, temper
     throw new ValidationError('batch_size must be an integer between 1 and 100');
   }
 
-  const entries = {
+  configRepository.setMany(db, {
     'ai.enabled':     String(enabledBool),
     'ai.api_url':     resolvedUrl,
+    'ai.api_key_env': envVar,
     'ai.model':       model || 'claude-sonnet-4-6',
     'ai.max_tokens':  String(mt),
     'ai.temperature': String(temp),
     'ai.batch_size':  String(bs),
-  };
-  if (api_key && api_key !== '****') {
-    entries['ai.api_key'] = api_key;
-  }
-  configRepository.setMany(db, entries);
+  });
 }
 
 module.exports = { getNistConfig, saveNistConfig, getAiConfig, saveAiConfig };

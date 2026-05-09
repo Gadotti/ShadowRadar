@@ -57,11 +57,10 @@ describe('configService', () => {
   });
 
   describe('getAiConfig', () => {
-    test('returns boolean enabled and masked api_key', () => {
+    test('returns boolean enabled and api_key_env string', () => {
       const cfg = configService.getAiConfig(db);
       expect(typeof cfg.enabled).toBe('boolean');
-      expect(cfg.api_key).toBe('****');
-      expect(cfg.api_key_set).toBe(false);
+      expect(typeof cfg.api_key_env).toBe('string');
       expect(cfg.model).toBeTruthy();
       expect(typeof cfg.max_tokens).toBe('number');
     });
@@ -86,17 +85,21 @@ describe('configService', () => {
       expect(cfg.batch_size).toBe(10);
     });
 
-    test('saves api_key when not masked', () => {
-      configService.saveAiConfig(db, { ...validCfg, api_key: 'sk-real-key' });
+    test('saves api_key_env and reads back correctly', () => {
+      configService.saveAiConfig(db, { ...validCfg, api_key_env: 'ANTHROPIC_API_KEY' });
       const cfg = configService.getAiConfig(db);
-      expect(cfg.api_key_set).toBe(true);
+      expect(cfg.api_key_env).toBe('ANTHROPIC_API_KEY');
     });
 
-    test('does not overwrite api_key when masked value sent', () => {
-      configService.saveAiConfig(db, { ...validCfg, api_key: 'sk-real-key' });
-      configService.saveAiConfig(db, { ...validCfg, api_key: '****' });
+    test('allows empty api_key_env', () => {
+      configService.saveAiConfig(db, { ...validCfg, api_key_env: '' });
       const cfg = configService.getAiConfig(db);
-      expect(cfg.api_key_set).toBe(true);
+      expect(cfg.api_key_env).toBe('');
+    });
+
+    test('throws ValidationError for invalid env var name', () => {
+      expect(() => configService.saveAiConfig(db, { ...validCfg, api_key_env: '123_INVALID' }))
+        .toThrow(ValidationError);
     });
 
     test('throws ValidationError for invalid api_url', () => {

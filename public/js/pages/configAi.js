@@ -58,9 +58,9 @@ export async function render(container) {
           <input type="url" id="ai-url" value="${cfg.api_url}">
         </div>
         <div class="form-group">
-          <label for="ai-key">API Key</label>
-          <input type="text" id="ai-key" placeholder="${cfg.api_key_set ? '••••••••  (deixe vazio para não alterar)' : 'sk-ant-…'}">
-          <span class="form-hint">Deixe em branco para manter a chave atual.</span>
+          <label for="ai-key-env">Variável de ambiente da API Key</label>
+          <input type="text" id="ai-key-env" value="${cfg.api_key_env}" placeholder="ANTHROPIC_API_KEY">
+          <span class="form-hint">Nome da variável de ambiente que contém a API key do Claude. A chave não é armazenada no banco de dados.</span>
         </div>
         <div class="form-group">
           <label for="ai-model">Modelo</label>
@@ -103,12 +103,10 @@ export async function render(container) {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Salvando…';
 
-    const api_key = container.querySelector('#ai-key').value.trim();
-
     const body = {
       enabled:     enabledToggle.checked,
       api_url:     container.querySelector('#ai-url').value.trim(),
-      api_key:     api_key || '****',
+      api_key_env: container.querySelector('#ai-key-env').value.trim(),
       model:       container.querySelector('#ai-model').value.trim(),
       max_tokens:  Number(container.querySelector('#ai-tokens').value),
       temperature: Number(container.querySelector('#ai-temp').value),

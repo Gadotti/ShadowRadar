@@ -54,7 +54,7 @@ function seedConfig(db) {
   const entries = [
     ['nist.page_size', '50'], ['nist.api_key', ''],
     ['ai.enabled', 'false'], ['ai.api_url', 'https://api.anthropic.com'],
-    ['ai.api_key', ''], ['ai.model', 'claude-sonnet-4-6'],
+    ['ai.api_key_env', ''], ['ai.model', 'claude-sonnet-4-6'],
     ['ai.max_tokens', '16000'], ['ai.temperature', '0'],
     ['ai.batch_size', '20'], ['scan.script_path', './scripts/scan.py'],
   ];

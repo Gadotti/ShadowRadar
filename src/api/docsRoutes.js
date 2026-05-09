@@ -685,9 +685,9 @@ function buildSpec() {
                   schema: {
                     type: 'object',
                     properties: {
-                      'ai.enabled': { type: 'string', enum: ['true', 'false'] },
-                      'ai.api_key': { type: 'string' },
-                      'ai.model':   { type: 'string', example: 'claude-sonnet-4-6' },
+                      'ai.enabled':     { type: 'string', enum: ['true', 'false'] },
+                      'ai.api_key_env': { type: 'string', description: 'Name of the environment variable that holds the Claude API key', example: 'ANTHROPIC_API_KEY' },
+                      'ai.model':       { type: 'string', example: 'claude-sonnet-4-6' },
                     },
                   },
                 },
@@ -708,9 +708,9 @@ function buildSpec() {
                 schema: {
                   type: 'object',
                   properties: {
-                    'ai.enabled': { type: 'string', enum: ['true', 'false'] },
-                    'ai.api_key': { type: 'string' },
-                    'ai.model':   { type: 'string', example: 'claude-sonnet-4-6' },
+                    'ai.enabled':     { type: 'string', enum: ['true', 'false'] },
+                    'ai.api_key_env': { type: 'string', description: 'Name of the environment variable that holds the Claude API key', example: 'ANTHROPIC_API_KEY' },
+                    'ai.model':       { type: 'string', example: 'claude-sonnet-4-6' },
                   },
                 },
               },
