@@ -13,7 +13,7 @@ const authenticate = require('./middleware/authenticate');
 const authRoutes = require('./api/authRoutes');
 
 const PORT = process.env.PORT || 3500;
-const { version } = require('../package.json');
+const { version } = require('../version.json');
 
 function buildApp() {
   const app = express();
