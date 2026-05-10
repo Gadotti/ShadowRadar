@@ -41,11 +41,13 @@ describe('cveService', () => {
   });
 
   describe('getMacroView', () => {
-    test('returns assets with risk label and alert', () => {
+    test('returns assets with risk label and alert, plus last_scan', () => {
       const assetId = seedAsset(db);
       seedCve(db, assetId, { severity: 'CRITICAL' });
-      const rows = cveService.getMacroView(db, {});
-      const row = rows.find(r => r.asset_id === assetId);
+      const res = cveService.getMacroView(db, {});
+      expect(Array.isArray(res.rows)).toBe(true);
+      expect('last_scan' in res).toBe(true);
+      const row = res.rows.find(r => r.asset_id === assetId);
       expect(row).toBeTruthy();
       expect(row.risk).toBe('CRITICAL');
       expect(row.alert).toBeTruthy();
@@ -54,7 +56,7 @@ describe('cveService', () => {
     test('excluded assessments lower risk to NONE', () => {
       const assetId = seedAsset(db);
       seedCve(db, assetId, { severity: 'HIGH', user_assessment: 'Not Affected' });
-      const rows = cveService.getMacroView(db, {});
+      const { rows } = cveService.getMacroView(db, {});
       const row = rows.find(r => r.asset_id === assetId);
       expect(row.risk).toBe('NONE');
     });
@@ -62,7 +64,7 @@ describe('cveService', () => {
     test('False Positive assessment also excluded from risk', () => {
       const assetId = seedAsset(db);
       seedCve(db, assetId, { severity: 'CRITICAL', user_assessment: 'False Positive' });
-      const rows = cveService.getMacroView(db, {});
+      const { rows } = cveService.getMacroView(db, {});
       const row = rows.find(r => r.asset_id === assetId);
       expect(row.risk).toBe('NONE');
     });

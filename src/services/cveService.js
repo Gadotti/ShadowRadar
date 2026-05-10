@@ -43,10 +43,14 @@ function getMacroView(db, rawFilters) {
     asset_id:          rawFilters.asset_id ? Number(rawFilters.asset_id) : null,
     active_assets_only: rawFilters.active_assets_only === 'true',
   });
-  return rows.map(row => {
-    const risk = RISK_LABEL[Math.min(row.risk_level, 5)] || 'NONE';
-    return { ...row, risk, alert: ALERT_LABEL[risk] };
-  });
+  const { last_completed_at } = cveRepository.getLastScanInfo(db);
+  return {
+    rows: rows.map(row => {
+      const risk = RISK_LABEL[Math.min(row.risk_level, 5)] || 'NONE';
+      return { ...row, risk, alert: ALERT_LABEL[risk] };
+    }),
+    last_scan: last_completed_at,
+  };
 }
 
 function updateAssessment(db, id, { user_assessment, user_notes }) {

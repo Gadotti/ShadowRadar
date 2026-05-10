@@ -56,14 +56,15 @@ describe('cve routes', () => {
   });
 
   describe('GET /api/cves/macro', () => {
-    test('returns array with risk and alert for each asset', async () => {
+    test('returns rows array with risk and alert for each asset, plus last_scan', async () => {
       const r = await req(baseUrl, 'GET', '/api/cves/macro', { cookie: readerCookie });
       expect(r.status).toBe(200);
-      expect(Array.isArray(r.data)).toBe(true);
-      if (r.data.length > 0) {
-        expect('risk'     in r.data[0]).toBe(true);
-        expect('alert'    in r.data[0]).toBe(true);
-        expect('asset_id' in r.data[0]).toBe(true);
+      expect(Array.isArray(r.data.rows)).toBe(true);
+      expect('last_scan' in r.data).toBe(true);
+      if (r.data.rows.length > 0) {
+        expect('risk'     in r.data.rows[0]).toBe(true);
+        expect('alert'    in r.data.rows[0]).toBe(true);
+        expect('asset_id' in r.data.rows[0]).toBe(true);
       }
     });
   });

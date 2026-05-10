@@ -344,9 +344,10 @@ export async function render(container, user) {
       const params = {};
       if (filters.asset_id) params.asset_id = filters.asset_id;
       if (filters.active_assets_only) params.active_assets_only = filters.active_assets_only;
-      const rows = await api.get('/cves/macro', params);
+      const res = await api.get('/cves/macro', params);
       if (!isAlive()) return;
-      contentArea.innerHTML = macroTableHTML(rows);
+      if (scanEl) scanEl.innerHTML = scanIndicatorHTML(res.last_scan);
+      contentArea.innerHTML = macroTableHTML(res.rows);
     } catch (err) {
       if (err.status === 401 || !isAlive()) return;
       contentArea.innerHTML = errorHTML(err.message);
