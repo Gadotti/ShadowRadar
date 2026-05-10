@@ -140,8 +140,8 @@ export async function render(container) {
       <div class="card-header"><span class="card-title">Configuração</span></div>
       <div style="max-width:520px">
         <div class="form-group">
-          <label>Caminho do script</label>
-          <input type="text" value="${escHtml(status.script_path || './scripts/scan.py')}" readonly style="opacity:0.7;cursor:default">
+          <label>Script de scan</label>
+          <p style="margin:4px 0 0;color:var(--color-text-muted);font-family:monospace;font-size:0.875rem">${escHtml(status.script_path || './scripts/scan.py')}</p>
         </div>
         <div class="form-group">
           <label>Escopo</label>
