@@ -64,6 +64,12 @@ describe('configService', () => {
       expect(cfg.model).toBeTruthy();
       expect(typeof cfg.max_tokens).toBe('number');
     });
+
+    test('returns api_key_source and has_direct_key fields', () => {
+      const cfg = configService.getAiConfig(db);
+      expect(cfg.api_key_source).toBe('env_var');
+      expect(typeof cfg.has_direct_key).toBe('boolean');
+    });
   });
 
   describe('saveAiConfig', () => {
@@ -125,6 +131,50 @@ describe('configService', () => {
     test('throws ValidationError for batch_size > 100', () => {
       expect(() => configService.saveAiConfig(db, { ...validCfg, batch_size: '101' }))
         .toThrow(ValidationError);
+    });
+
+    test('saves api_key_source=env_var and clears encrypted key', () => {
+      configService.saveAiConfig(db, { ...validCfg, api_key_source: 'env_var', api_key_env: 'MY_KEY' });
+      const cfg = configService.getAiConfig(db);
+      expect(cfg.api_key_source).toBe('env_var');
+      expect(cfg.api_key_env).toBe('MY_KEY');
+      expect(cfg.has_direct_key).toBe(false);
+    });
+
+    test('saves api_key_source=direct with encrypted key', () => {
+      process.env.ENCRYPTION_KEY = require('crypto').randomBytes(32).toString('hex');
+      configService.saveAiConfig(db, { ...validCfg, api_key_source: 'direct', api_key_direct: 'sk-test-key' });
+      const cfg = configService.getAiConfig(db);
+      expect(cfg.api_key_source).toBe('direct');
+      expect(cfg.has_direct_key).toBe(true);
+      expect(cfg.api_key_env).toBe('');
+      delete process.env.ENCRYPTION_KEY;
+    });
+
+    test('keeps existing encrypted key when direct key not provided on save', () => {
+      process.env.ENCRYPTION_KEY = require('crypto').randomBytes(32).toString('hex');
+      configService.saveAiConfig(db, { ...validCfg, api_key_source: 'direct', api_key_direct: 'sk-original' });
+      configService.saveAiConfig(db, { ...validCfg, api_key_source: 'direct' });
+      const cfg = configService.getAiConfig(db);
+      expect(cfg.has_direct_key).toBe(true);
+      delete process.env.ENCRYPTION_KEY;
+    });
+
+    test('throws ValidationError when ENCRYPTION_KEY missing for direct key', () => {
+      delete process.env.ENCRYPTION_KEY;
+      expect(() =>
+        configService.saveAiConfig(db, { ...validCfg, api_key_source: 'direct', api_key_direct: 'sk-test' })
+      ).toThrow(ValidationError);
+    });
+
+    test('switching to env_var clears stored encrypted key', () => {
+      process.env.ENCRYPTION_KEY = require('crypto').randomBytes(32).toString('hex');
+      configService.saveAiConfig(db, { ...validCfg, api_key_source: 'direct', api_key_direct: 'sk-test' });
+      configService.saveAiConfig(db, { ...validCfg, api_key_source: 'env_var', api_key_env: 'MY_ENV' });
+      const cfg = configService.getAiConfig(db);
+      expect(cfg.api_key_source).toBe('env_var');
+      expect(cfg.has_direct_key).toBe(false);
+      delete process.env.ENCRYPTION_KEY;
     });
   });
 });

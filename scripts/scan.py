@@ -17,6 +17,30 @@ import argparse
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+
+def _carregar_dotenv() -> None:
+    """Carrega variáveis do .env da pasta raiz do projeto (pai de scripts/).
+
+    Só define variáveis que ainda não estejam no ambiente — o que o Node.js
+    já injetou via process.env tem precedência. Não requer dependência externa.
+    """
+    env_file = Path(__file__).parent.parent / ".env"
+    if not env_file.exists():
+        return
+    with open(env_file, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
+_carregar_dotenv()
+
 # --- Configurações ---
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
@@ -33,6 +57,8 @@ _CLAUDE_MODEL = "claude-sonnet-4-20250514"           # ai.model
 _CLAUDE_MAX_TOKENS = 16000                           # ai.max_tokens
 _CLAUDE_TEMPERATURE = 0                              # ai.temperature
 _CLAUDE_API_KEY_ENV = "ANTHROPIC_API_KEY"            # ai.api_key_env
+_CLAUDE_API_KEY_SOURCE = "env_var"                   # ai.api_key_source ('env_var' | 'direct')
+_CLAUDE_API_KEY_ENCRYPTED = ""                       # ai.api_key_encrypted (ciphertext)
 _AI_ENABLED = True                                   # ai.enabled
 _NVD_PAGE_SIZE = 50                                  # nist.page_size
 _NVD_API_KEY = ""                                    # nist.api_key
@@ -438,12 +464,26 @@ def analisar_cves_com_claude(nome_ativo, versao_ativo, cves_para_analise, log_di
         _write_log(msg, log_dir)
         return {}
 
-    api_key = os.environ.get(_CLAUDE_API_KEY_ENV)
-    if not api_key:
-        msg = f"  ⚠️  AVISO: variável {_CLAUDE_API_KEY_ENV} não configurada. Pulando análise da Claude AI."
-        print(msg)
-        _write_log(msg, log_dir)
-        return {}
+    if _CLAUDE_API_KEY_SOURCE == "direct":
+        if not _CLAUDE_API_KEY_ENCRYPTED:
+            msg = "  ⚠️  AVISO: chave de API não configurada no banco. Pulando análise da Claude AI."
+            print(msg)
+            _write_log(msg, log_dir)
+            return {}
+        try:
+            api_key = _decriptar_chave_api(_CLAUDE_API_KEY_ENCRYPTED)
+        except Exception as exc:
+            msg = f"  ⚠️  AVISO: falha ao descriptografar chave de API: {exc}. Pulando análise da Claude AI."
+            print(msg)
+            _write_log(msg, log_dir)
+            return {}
+    else:
+        api_key = os.environ.get(_CLAUDE_API_KEY_ENV)
+        if not api_key:
+            msg = f"  ⚠️  AVISO: variável {_CLAUDE_API_KEY_ENV} não configurada. Pulando análise da Claude AI."
+            print(msg)
+            _write_log(msg, log_dir)
+            return {}
 
     total = len(cves_para_analise)
     num_lotes = (total + _CLAUDE_BATCH_SIZE - 1) // _CLAUDE_BATCH_SIZE
@@ -823,11 +863,47 @@ def carregar_config_db(conn: sqlite3.Connection) -> dict:
     return {r["key"]: r["value"] for r in rows}
 
 
+def _decriptar_chave_api(encrypted_str: str) -> str:
+    """Descriptografa a API key armazenada no banco usando ENCRYPTION_KEY do ambiente.
+
+    Espera formato: ivHex:tagHex:ciphertextHex (produzido por src/crypto.js).
+    Requer: pip install cryptography
+    """
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    except ImportError as exc:
+        raise ImportError(
+            "Pacote 'cryptography' necessário para descriptografar a chave de API. "
+            "Execute: pip install cryptography"
+        ) from exc
+
+    enc_key_hex = os.environ.get("ENCRYPTION_KEY", "")
+    if not enc_key_hex or len(enc_key_hex) != 64:
+        raise ValueError(
+            "ENCRYPTION_KEY deve ser uma string hex de 64 caracteres (32 bytes). "
+            "Gere com: openssl rand -hex 32"
+        )
+
+    parts = encrypted_str.split(":")
+    if len(parts) != 3:
+        raise ValueError("Formato de chave criptografada inválido (esperado: iv:tag:dados)")
+
+    iv_hex, tag_hex, data_hex = parts
+    key  = bytes.fromhex(enc_key_hex)
+    iv   = bytes.fromhex(iv_hex)
+    tag  = bytes.fromhex(tag_hex)
+    data = bytes.fromhex(data_hex)
+
+    aesgcm = AESGCM(key)
+    return aesgcm.decrypt(iv, data + tag, None).decode("utf-8")
+
+
 def aplicar_config_db(cfg: dict, log_dir: Path) -> None:
     """Sobrescreve as constantes globais com valores vindos da tabela config."""
     global _NVD_PAGE_SIZE, _NVD_API_KEY
     global _AI_ENABLED, _CLAUDE_MODEL, _CLAUDE_MAX_TOKENS, _CLAUDE_TEMPERATURE
     global _CLAUDE_BATCH_SIZE, _CLAUDE_API_KEY_ENV, CLAUDE_API_URL
+    global _CLAUDE_API_KEY_SOURCE, _CLAUDE_API_KEY_ENCRYPTED
 
     def _int(key, default):
         try:
@@ -850,6 +926,8 @@ def aplicar_config_db(cfg: dict, log_dir: Path) -> None:
     _CLAUDE_TEMPERATURE = _float("ai.temperature", _CLAUDE_TEMPERATURE)
     _CLAUDE_BATCH_SIZE = _int("ai.batch_size", _CLAUDE_BATCH_SIZE)
     _CLAUDE_API_KEY_ENV = (cfg.get("ai.api_key_env") or _CLAUDE_API_KEY_ENV).strip()
+    _CLAUDE_API_KEY_SOURCE = (cfg.get("ai.api_key_source") or "env_var").strip()
+    _CLAUDE_API_KEY_ENCRYPTED = (cfg.get("ai.api_key_encrypted") or "").strip()
 
     api_url_base = (cfg.get("ai.api_url") or "").strip()
     if api_url_base:
@@ -858,7 +936,7 @@ def aplicar_config_db(cfg: dict, log_dir: Path) -> None:
     msg = (
         f"Config aplicada do banco: nvd_page_size={_NVD_PAGE_SIZE}, ai_enabled={_AI_ENABLED}, "
         f"ai_model={_CLAUDE_MODEL}, ai_batch={_CLAUDE_BATCH_SIZE}, "
-        f"ai_key_env={_CLAUDE_API_KEY_ENV}"
+        f"ai_key_source={_CLAUDE_API_KEY_SOURCE}, ai_key_env={_CLAUDE_API_KEY_ENV}"
     )
     print(msg)
     _write_log(msg, log_dir)

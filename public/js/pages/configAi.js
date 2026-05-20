@@ -27,6 +27,8 @@ export async function render(container) {
     return;
   }
 
+  const isEnvVar = (cfg.api_key_source || 'env_var') === 'env_var';
+
   container.innerHTML = `
     <div class="page-header">
       <h1 class="page-title">Configuração AI</h1>
@@ -57,11 +59,41 @@ export async function render(container) {
           <label for="ai-url">URL da API</label>
           <input type="url" id="ai-url" value="${cfg.api_url}">
         </div>
+
         <div class="form-group">
-          <label for="ai-key-env">Variável de ambiente da API Key</label>
-          <input type="text" id="ai-key-env" value="${cfg.api_key_env}" placeholder="ANTHROPIC_API_KEY">
-          <span class="form-hint">Nome da variável de ambiente que contém a API key do Claude. A chave não é armazenada no banco de dados.</span>
+          <label>Fonte da API Key</label>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal">
+              <input type="radio" name="api-key-source" id="source-env" value="env_var" ${isEnvVar ? 'checked' : ''}>
+              Variável de ambiente
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal">
+              <input type="radio" name="api-key-source" id="source-direct" value="direct" ${!isEnvVar ? 'checked' : ''}>
+              Chave direta (criptografada no banco)
+            </label>
+          </div>
         </div>
+
+        <div id="section-env-var" ${!isEnvVar ? 'hidden' : ''}>
+          <div class="form-group">
+            <label for="ai-key-env">Variável de ambiente da API Key</label>
+            <input type="text" id="ai-key-env" value="${cfg.api_key_env}" placeholder="ANTHROPIC_API_KEY">
+            <span class="form-hint">Nome da variável de ambiente que contém a API key do Claude. A chave não é armazenada no banco de dados.</span>
+          </div>
+        </div>
+
+        <div id="section-direct-key" ${isEnvVar ? 'hidden' : ''}>
+          <div class="form-group">
+            <label for="ai-key-direct">API Key</label>
+            <input type="password" id="ai-key-direct" placeholder="${cfg.has_direct_key ? 'Chave configurada — deixe em branco para manter' : 'sk-ant-api03-...'}">
+            <span class="form-hint" id="direct-key-hint">
+              ${cfg.has_direct_key
+                ? '&#10003; Chave configurada. Digite uma nova para substituir. A chave é criptografada com AES-256-GCM e nunca exibida em texto claro.'
+                : 'A chave será criptografada com AES-256-GCM antes de ser salva. Requer ENCRYPTION_KEY no .env do servidor.'}
+            </span>
+          </div>
+        </div>
+
         <div class="form-group">
           <label for="ai-model">Modelo</label>
           <input type="text" id="ai-model" value="${cfg.model}">
@@ -92,9 +124,23 @@ export async function render(container) {
   const form          = container.querySelector('#ai-form');
   const errorEl       = container.querySelector('#ai-error');
   const saveBtn       = container.querySelector('#ai-save');
+  const sectionEnv    = container.querySelector('#section-env-var');
+  const sectionDirect = container.querySelector('#section-direct-key');
+  const directHint    = container.querySelector('#direct-key-hint');
+  const directInput   = container.querySelector('#ai-key-direct');
+
+  let hasDirectKey = cfg.has_direct_key;
 
   enabledToggle.addEventListener('change', () => {
     fieldsDiv.style.opacity = enabledToggle.checked ? '1' : '0.55';
+  });
+
+  container.querySelectorAll('input[name="api-key-source"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isDirect = radio.value === 'direct';
+      sectionEnv.hidden    = isDirect;
+      sectionDirect.hidden = !isDirect;
+    });
   });
 
   form.addEventListener('submit', async (e) => {
@@ -103,19 +149,34 @@ export async function render(container) {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Salvando…';
 
+    const source   = container.querySelector('input[name="api-key-source"]:checked').value;
+    const keyDirect = directInput.value.trim();
+
     const body = {
-      enabled:     enabledToggle.checked,
-      api_url:     container.querySelector('#ai-url').value.trim(),
-      api_key_env: container.querySelector('#ai-key-env').value.trim(),
-      model:       container.querySelector('#ai-model').value.trim(),
-      max_tokens:  Number(container.querySelector('#ai-tokens').value),
-      temperature: Number(container.querySelector('#ai-temp').value),
-      batch_size:  Number(container.querySelector('#ai-batch').value),
+      enabled:        enabledToggle.checked,
+      api_url:        container.querySelector('#ai-url').value.trim(),
+      api_key_source: source,
+      api_key_env:    container.querySelector('#ai-key-env').value.trim(),
+      model:          container.querySelector('#ai-model').value.trim(),
+      max_tokens:     Number(container.querySelector('#ai-tokens').value),
+      temperature:    Number(container.querySelector('#ai-temp').value),
+      batch_size:     Number(container.querySelector('#ai-batch').value),
     };
 
+    if (source === 'direct' && keyDirect) {
+      body.api_key_direct = keyDirect;
+    }
+
     try {
-      await api.put('/config/ai', body);
+      const updated = await api.put('/config/ai', body);
       showToast('Configurações AI salvas com sucesso.', 'success');
+
+      if (source === 'direct' && keyDirect) {
+        hasDirectKey = true;
+        directInput.value       = '';
+        directInput.placeholder = 'Chave configurada — deixe em branco para manter';
+        directHint.innerHTML    = '&#10003; Chave configurada. Digite uma nova para substituir. A chave é criptografada com AES-256-GCM e nunca exibida em texto claro.';
+      }
     } catch (err) {
       errorEl.textContent = err.message || 'Erro ao salvar.';
       errorEl.hidden = false;
