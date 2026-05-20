@@ -18,7 +18,13 @@ const { version } = require('../version.json');
 function buildApp() {
   const app = express();
 
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: { 'upgrade-insecure-requests': null },
+    },
+    strictTransportSecurity: false,
+  }));
   app.use(cookieParser());
   app.use(express.json());
 
