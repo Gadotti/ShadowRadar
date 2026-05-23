@@ -44,7 +44,7 @@ function historyTableHTML(runs) {
     return '<div class="empty-state" style="padding:32px"><div class="empty-state-text">Nenhum scan executado ainda.</div></div>';
   }
   const rows = runs.map(r => `
-    <tr>
+    <tr data-run-id="${r.id}">
       <td>${fmtDate(r.started_at)}</td>
       <td>${fmtDuration(r.duration_seconds)}</td>
       <td>${statusBadge(r.status)}</td>
@@ -53,13 +53,16 @@ function historyTableHTML(runs) {
       <td class="text-muted" title="${escHtml(r.error_message || '')}" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
         ${r.error_message ? escHtml(r.error_message.slice(0, 60)) + (r.error_message.length > 60 ? '…' : '') : '—'}
       </td>
+      <td style="white-space:nowrap">
+        ${r.status !== 'running' ? `<button class="btn-icon-ghost delete-run-btn" data-id="${r.id}" title="Excluir">✕</button>` : ''}
+      </td>
     </tr>`).join('');
   return `
     <div class="table-wrapper">
       <table>
         <thead><tr>
           <th>Data/Hora</th><th>Duração</th><th>Status</th>
-          <th>Ativos</th><th>CVEs</th><th>Erro</th>
+          <th>Ativos</th><th>CVEs</th><th>Erro</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -291,8 +294,22 @@ export async function render(container) {
     try {
       const h = await api.get('/scan/history');
       historyBody.innerHTML = historyTableHTML(h.runs || []);
+      historyBody.querySelectorAll('.delete-run-btn').forEach(btn => {
+        btn.addEventListener('click', () => onDeleteRun(Number(btn.dataset.id)));
+      });
     } catch {
       historyBody.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-text">Erro ao carregar histórico.</div></div>';
+    }
+  }
+
+  async function onDeleteRun(id) {
+    if (!confirm('Excluir este registro do histórico?')) return;
+    try {
+      await api.del(`/scan/history/${id}`);
+      showToast('Registro excluído.', 'success');
+      loadHistory();
+    } catch (err) {
+      showToast(err.message || 'Erro ao excluir registro.', 'error');
     }
   }
 

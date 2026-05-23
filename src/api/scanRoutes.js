@@ -42,6 +42,18 @@ router.get('/history', authorize('editor'), (req, res) => {
   return res.json({ runs: runsWithDuration });
 });
 
+router.delete('/history/:id', authorize('editor'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Invalid scan run ID' });
+
+  const run = scanRepository.getRunById(getDb(), id);
+  if (!run) return res.status(404).json({ error: 'Scan run not found' });
+  if (run.status === 'running') return res.status(409).json({ error: 'Cannot delete a scan that is currently running' });
+
+  scanRepository.deleteRun(getDb(), id);
+  return res.json({ ok: true });
+});
+
 function durationSeconds(start, end) {
   if (!start || !end) return null;
   const parse = s => new Date(s.includes('T') ? s : s.replace(' ', 'T') + 'Z');

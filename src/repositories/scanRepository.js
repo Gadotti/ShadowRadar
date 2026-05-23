@@ -33,4 +33,9 @@ function getLastCompletedRun(db) {
   return db.prepare("SELECT * FROM scan_runs WHERE status='completed' ORDER BY started_at DESC LIMIT 1").get();
 }
 
-module.exports = { createRun, updateRun, getRunById, getCurrentRun, listRuns, getLastCompletedRun };
+function deleteRun(db, id) {
+  const result = db.prepare('DELETE FROM scan_runs WHERE id=?').run(id);
+  return result.changes > 0;
+}
+
+module.exports = { createRun, updateRun, getRunById, getCurrentRun, listRuns, getLastCompletedRun, deleteRun };
