@@ -67,6 +67,7 @@ Open [http://localhost:3500](http://localhost:3500) in your browser.
 | `DB_PATH` | `./data/shadowradar.db` | Path to the SQLite database file |
 | `JWT_SECRET` | — | **Required.** Random string ≥ 32 characters |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `ENCRYPTION_KEY` | — | 64-character hex string (AES-256-GCM key). Required only when using the **Direct key** mode in AI config. Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 
 ### CVE Scan Script
 
@@ -116,7 +117,7 @@ npm run create-user
 - **Dashboard** — At-a-glance KPIs (monitored assets, total CVEs, unassessed findings, items in mitigation) and four charts: severity distribution, CVEs per asset (top 10), monthly trend, and assessment distribution. All charts support filtering by asset, time period, and severity.
 - **CVE results view** — Sortable and filterable table with full-text search, severity chips, AI badge, per-row assessment editor, and an expandable detail panel. Toggle between list and macro (card) view.
 - **NIST config** — Set your NVD API key and page size from the UI.
-- **AI config** — Enable/disable AI enrichment, set the Anthropic API key, and choose the Claude model.
+- **AI config** — Enable/disable AI enrichment, configure the Anthropic API key (either via environment variable name or stored directly in the database encrypted with AES-256-GCM using `ENCRYPTION_KEY`), and choose the Claude model.
 - **API documentation** — Interactive Swagger UI at `/api/docs` (public, no login required). OpenAPI 3.0 spec available as JSON at `/api/docs/spec`.
 - **External sync** — Push asset lists from CI/CD pipelines or asset management tools via `POST /api/v1/assets/sync` (API key required). The `cve_start_date` field is never overwritten once set.
 - **Security export** — Pull a full JSON security report with computed risk levels via `GET /api/v1/export`.

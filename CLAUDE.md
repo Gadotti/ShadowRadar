@@ -90,7 +90,7 @@ tests/
 | `assets` | id, name, tag (NULL), url, current_version, active, cve_start_date; UNIQUE(name, tag) when tag is not NULL |
 | `asset_cves` | id, asset_id (FK CASCADE DELETE), cve_id, severity, cvss_score, user_assessment, ai_assessment |
 | `scan_runs` | id, started_at, finished_at, status ('running'\|'completed'\|'failed') |
-| `config` | key (PK), value — keys: `nist.page_size`, `nist.api_key`, `ai.enabled`, `ai.api_key`, `ai.model`, `scan.script_path` |
+| `config` | key (PK), value — keys: `nist.page_size`, `nist.api_key`; `ai.enabled`, `ai.api_url`, `ai.model`, `ai.max_tokens`, `ai.temperature`, `ai.batch_size`, `ai.api_key_source` ('env_var'\|'direct'), `ai.api_key_env` (env var name), `ai.api_key_encrypted` (AES-256-GCM, requires `ENCRYPTION_KEY`); `scan.script_path` |
 
 ### Authentication
 
@@ -121,7 +121,10 @@ NODE_ENV=development
 DB_PATH=./data/shadowradar.db
 JWT_SECRET=<random ≥32 chars>
 LOG_LEVEL=info
+ENCRYPTION_KEY=<64-char hex string>   # Required only when ai.api_key_source = 'direct'
 ```
+
+Generate `ENCRYPTION_KEY` with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
 ---
 
