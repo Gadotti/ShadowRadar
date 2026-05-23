@@ -90,7 +90,7 @@ router.get('/', authAny, (req, res) => {
       url:               a.url || '',
       current_version:   a.current_version,
       pubEndDate_checked: pubEndDate || null,
-      cves: cves.map(c => ({
+      cves: cves.filter(c => !EXCLUDED_ASSESSMENTS.has(c.user_assessment)).map(c => ({
         cve_id:               c.cve_id,
         description:          c.description || '',
         severity:             c.severity,
