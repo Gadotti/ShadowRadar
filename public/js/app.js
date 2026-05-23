@@ -10,6 +10,7 @@ const ROUTES = {
   '/config/nist': () => import('./pages/configNist.js'),
   '/config/ai':   () => import('./pages/configAi.js'),
   '/settings':    () => import('./pages/settings.js'),
+  '/users':       () => import('./pages/users.js'),
 };
 
 const EDITOR_ROUTES = ['/scan', '/config/nist', '/config/ai', '/settings'];

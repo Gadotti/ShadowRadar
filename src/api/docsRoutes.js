@@ -52,9 +52,11 @@ function buildSpec() {
         User: {
           type: 'object',
           properties: {
-            id: { type: 'integer', example: 1 },
-            username: { type: 'string', example: 'admin' },
-            role: { type: 'string', enum: ['reader', 'editor'] },
+            id:         { type: 'integer', example: 1 },
+            name:       { type: 'string', example: 'Admin User' },
+            username:   { type: 'string', example: 'admin' },
+            role:       { type: 'string', enum: ['reader', 'editor'] },
+            created_at: { type: 'string', format: 'date-time' },
           },
         },
         Asset: {
@@ -200,6 +202,7 @@ function buildSpec() {
       { name: 'Dashboard', description: 'Summary and KPI data' },
       { name: 'Export',    description: 'Security report export (JWT cookie or X-API-Key)' },
       { name: 'Sync',      description: 'Bulk asset sync from external systems (X-API-Key only)' },
+      { name: 'Users',     description: 'User listing and management' },
     ],
     paths: {
       '/api/health': {
@@ -858,6 +861,46 @@ function buildSpec() {
               content: { 'application/json': { schema: { $ref: '#/components/schemas/ExportReport' } } },
             },
             401: { $ref: '#/components/responses/Unauthorized' },
+          },
+        },
+      },
+
+      '/api/users': {
+        get: {
+          tags: ['Users'],
+          summary: 'List users',
+          description: 'Returns all registered users. Available to both `reader` and `editor` roles.',
+          responses: {
+            200: {
+              description: 'List of users.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      users: { type: 'array', items: { $ref: '#/components/schemas/User' } },
+                    },
+                  },
+                },
+              },
+            },
+            401: { $ref: '#/components/responses/Unauthorized' },
+          },
+        },
+      },
+
+      '/api/users/{id}': {
+        delete: {
+          tags: ['Users'],
+          summary: 'Delete user',
+          description: 'Permanently removes a user account. Requires `editor` role. An editor cannot delete their own account.',
+          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' }, example: 2 }],
+          responses: {
+            204: { description: 'User deleted.' },
+            400: { $ref: '#/components/responses/BadRequest' },
+            401: { $ref: '#/components/responses/Unauthorized' },
+            403: { $ref: '#/components/responses/Forbidden' },
+            404: { $ref: '#/components/responses/NotFound' },
           },
         },
       },

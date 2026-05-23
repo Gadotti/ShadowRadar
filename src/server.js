@@ -46,6 +46,7 @@ function buildApp() {
   app.use('/api', authenticate);
 
   app.use('/api', require('./api/assetRoutes'));
+  app.use('/api/users',              require('./api/usersRoutes'));
   app.use('/api/config',            require('./api/configRoutes'));
   app.use('/api/scan',              require('./api/scanRoutes'));
   app.use('/api/cves',              require('./api/cveRoutes'));

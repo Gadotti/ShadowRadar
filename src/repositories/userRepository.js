@@ -37,4 +37,16 @@ function create(db, { name, username, passwordHash, role }) {
   return result.lastInsertRowid;
 }
 
-module.exports = { findByUsername, findById, create };
+function listAll(db) {
+  return db
+    .prepare('SELECT id, name, username, role, created_at FROM users ORDER BY created_at DESC')
+    .all();
+}
+
+function deleteById(db, id) {
+  return db
+    .prepare('DELETE FROM users WHERE id = ?')
+    .run(id);
+}
+
+module.exports = { findByUsername, findById, create, listAll, deleteById };

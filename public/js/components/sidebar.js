@@ -8,6 +8,7 @@ const MENU = [
   { path: '/config/nist', icon: '⚙', label: 'Config NIST',    editorOnly: true },
   { path: '/config/ai',   icon: '✦', label: 'Config AI',      editorOnly: true },
   { path: '/settings',    icon: '⚿', label: 'API Keys',       editorOnly: true },
+  { path: '/users',       icon: '◉', label: 'Usuários' },
   { href: '/api/docs',      icon: '⊡', label: 'API Docs',       editorOnly: true },
   { href: '/api/docs/spec', icon: '≡', label: 'API Spec (JSON)', editorOnly: true },
 ];
