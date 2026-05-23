@@ -138,6 +138,16 @@ function updateAssessment(db, id, { user_assessment, user_notes }) {
   `).run(user_assessment, user_notes, id);
 }
 
+function batchUpdateAssessment(db, ids, user_assessment) {
+  const placeholders = ids.map(() => '?').join(',');
+  const result = db.prepare(`
+    UPDATE asset_cves
+    SET user_assessment=?, evaluated_at=strftime('%Y-%m-%dT%H:%M:%SZ','now')
+    WHERE id IN (${placeholders})
+  `).run(user_assessment, ...ids);
+  return result.changes;
+}
+
 function getLastScanInfo(db) {
   const row = db.prepare(
     "SELECT finished_at AS last_completed_at FROM scan_runs WHERE status='completed' ORDER BY finished_at DESC LIMIT 1"
@@ -145,4 +155,4 @@ function getLastScanInfo(db) {
   return { last_completed_at: row?.last_completed_at || null };
 }
 
-module.exports = { findAll, getMacroView, findById, updateAssessment, getLastScanInfo };
+module.exports = { findAll, getMacroView, findById, updateAssessment, batchUpdateAssessment, getLastScanInfo };

@@ -131,7 +131,7 @@ function errorHTML(msg) {
   </div>`;
 }
 
-function listTableHTML(items, total, { page, page_size, order_by, order_dir }, isEditor) {
+function listTableHTML(items, total, { page, page_size, order_by, order_dir }, isEditor, selectedIds) {
   if (!items.length) return `<div class="empty-state">
     <div class="empty-state-icon">⚑</div>
     <div class="empty-state-title">Nenhum CVE encontrado</div>
@@ -148,6 +148,7 @@ function listTableHTML(items, total, { page, page_size, order_by, order_dir }, i
 
   const rows = items.map(c => `
     <tr data-id="${c.id}">
+      ${isEditor ? `<td style="width:32px;text-align:center"><input type="checkbox" class="row-check" value="${c.id}"${selectedIds?.has(c.id)?' checked':''}></td>` : ''}
       <td><code style="font-size:11px">${escHtml(c.cve_id)}</code></td>
       <td>
         <div style="font-weight:500">${escHtml(c.asset_name)}</div>
@@ -170,6 +171,9 @@ function listTableHTML(items, total, { page, page_size, order_by, order_dir }, i
       </td>
     </tr>`).join('');
 
+  const allChecked = items.length > 0 && items.every(c => selectedIds?.has(c.id));
+  const someChecked = !allChecked && items.some(c => selectedIds?.has(c.id));
+
   const pager = total>page_size ? `<div class="pagination">
     <span class="pagination-info">Mostrando ${from}–${to} de ${total} CVEs</span>
     <button class="btn btn-sm btn-secondary" id="page-prev" ${page<=1?'disabled':''}>‹</button>
@@ -180,6 +184,7 @@ function listTableHTML(items, total, { page, page_size, order_by, order_dir }, i
   return `<div class="table-wrapper" data-total="${total}">
     <table>
       <thead><tr>
+        ${isEditor ? `<th style="width:32px;text-align:center"><input type="checkbox" id="select-all-cves" title="Selecionar todos"${allChecked?' checked':''}${someChecked?' data-indeterminate="1"':''}></th>` : ''}
         ${th('CVE ID','cve_id')} ${th('Ativo','asset_name')} <th>Descrição</th>
         ${th('Severidade','severity')} ${th('CVSS','cvss_score')} ${th('Publicado','published_at')}
         ${th('Avaliação','user_assessment')} <th>AI</th> <th>Ações</th>
@@ -317,19 +322,95 @@ export async function render(container, user) {
   const filters = { search:'', asset_id:'', severity:[], user_assessment:[], has_ai_assessment:'', published_after:'', published_before:'', active_assets_only:'' };
   const listState = { page:1, page_size:50, order_by:'cvss_score', order_dir:'DESC' };
   let listItems = [];
+  const selectedIds = new Set();
 
   const contentArea  = container.querySelector('#content-area');
   const scanEl       = container.querySelector('#scan-indicator');
 
+  // ── Batch action bar (editor-only) ───────────────────────────────────────
+  let batchBar = null;
+  let batchAssessCtrl = null;
+
+  if (isEditor) {
+    batchBar = document.createElement('div');
+    batchBar.className = 'batch-bar';
+    batchBar.hidden = true;
+    batchBar.innerHTML = `
+      <span class="batch-count"><span id="batch-count-num">0</span> selecionados</span>
+      <div class="custom-select-wrapper opens-up" id="batch-assess-select" style="width:220px"></div>
+      <button class="btn btn-primary btn-sm" id="batch-apply">Aplicar Avaliação</button>
+      <button class="btn btn-ghost btn-sm" id="batch-cancel">✕ Limpar</button>
+    `;
+    container.appendChild(batchBar);
+    batchAssessCtrl = initCustomSelect(batchBar.querySelector('#batch-assess-select'), {
+      options:     [{ value: '', label: '— Escolher avaliação —' }, ...ASSESSMENT_OPTS.map(o => ({ value: o, label: o }))],
+      value:       '',
+      placeholder: '— Escolher avaliação —',
+    });
+    batchBar.querySelector('#batch-cancel').addEventListener('click', clearSelection);
+    batchBar.querySelector('#batch-apply').addEventListener('click', applyBatch);
+  }
+
+  function updateBatchBar() {
+    if (!batchBar) return;
+    const count = selectedIds.size;
+    batchBar.hidden = count === 0;
+    batchBar.querySelector('#batch-count-num').textContent = count;
+    const selectAll = contentArea.querySelector('#select-all-cves');
+    if (selectAll) {
+      const visibleIds = listItems.map(c => c.id);
+      const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+      const someSelected = !allSelected && visibleIds.some(id => selectedIds.has(id));
+      selectAll.checked = allSelected;
+      selectAll.indeterminate = someSelected;
+    }
+  }
+
+  function clearSelection() {
+    selectedIds.clear();
+    contentArea.querySelectorAll('.row-check').forEach(cb => cb.checked = false);
+    const selectAll = contentArea.querySelector('#select-all-cves');
+    if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
+    batchAssessCtrl?.reset();
+    updateBatchBar();
+  }
+
+  async function applyBatch() {
+    const ids = [...selectedIds];
+    const assessment = batchAssessCtrl.getValue() || null;
+    if (!assessment) { showToast('Selecione uma avaliação para aplicar.', 'error'); return; }
+    const applyBtn = batchBar.querySelector('#batch-apply');
+    applyBtn.disabled = true;
+    applyBtn.textContent = 'Salvando…';
+    try {
+      const result = await api.put('/cves/batch-assessment', { ids, user_assessment: assessment });
+      ids.forEach(id => {
+        const item = listItems.find(c => c.id === id);
+        if (item) {
+          item.user_assessment = assessment;
+          const badgeCell = contentArea.querySelector(`tr[data-id="${id}"] .assessment-badge`);
+          if (badgeCell) badgeCell.innerHTML = assessmentBadge(assessment);
+        }
+      });
+      showToast(`${result.updated} avaliação(ões) atualizada(s).`, 'success');
+      clearSelection();
+    } catch (err) {
+      showToast(err.message || 'Erro ao salvar.', 'error');
+    } finally {
+      applyBtn.disabled = false;
+      applyBtn.textContent = 'Aplicar Avaliação';
+    }
+  }
+
   // ── Load ─────────────────────────────────────────────────────────────────
   async function loadList() {
-    contentArea.innerHTML = skeletonHTML(9);
+    contentArea.innerHTML = skeletonHTML(isEditor ? 10 : 9);
     try {
       const res = await api.get('/cves', buildParams(filters, listState));
       if (!isAlive()) return;
       listItems = res.items;
       if (scanEl) scanEl.innerHTML = scanIndicatorHTML(res.last_scan);
-      contentArea.innerHTML = listTableHTML(res.items, res.total, listState, isEditor);
+      contentArea.innerHTML = listTableHTML(res.items, res.total, listState, isEditor, selectedIds);
       bindListEvents();
     } catch (err) {
       if (err.status === 401 || !isAlive()) return;
@@ -355,7 +436,7 @@ export async function render(container, user) {
     }
   }
 
-  function load() { listState.page = 1; view === 'list' ? loadList() : loadMacro(); }
+  function load() { listState.page = 1; clearSelection(); view === 'list' ? loadList() : loadMacro(); }
 
   // ── List events ───────────────────────────────────────────────────────────
   function bindListEvents() {
@@ -372,12 +453,31 @@ export async function render(container, user) {
     // Pagination
     const total = parseInt(contentArea.querySelector('.table-wrapper')?.dataset.total || '0');
     const totalPages = Math.ceil(total / listState.page_size);
-    contentArea.querySelector('#page-prev')?.addEventListener('click', () => { if (listState.page>1) { listState.page--; loadList(); } });
-    contentArea.querySelector('#page-next')?.addEventListener('click', () => { if (listState.page<totalPages) { listState.page++; loadList(); } });
-    contentArea.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => { listState.page = Number(b.dataset.page); loadList(); }));
+    contentArea.querySelector('#page-prev')?.addEventListener('click', () => { if (listState.page>1) { listState.page--; clearSelection(); loadList(); } });
+    contentArea.querySelector('#page-next')?.addEventListener('click', () => { if (listState.page<totalPages) { listState.page++; clearSelection(); loadList(); } });
+    contentArea.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => { listState.page = Number(b.dataset.page); clearSelection(); loadList(); }));
+
+    // Batch checkboxes
+    const selectAll = contentArea.querySelector('#select-all-cves');
+    if (selectAll) {
+      if (selectAll.dataset.indeterminate) selectAll.indeterminate = true;
+      selectAll.addEventListener('change', () => {
+        listItems.forEach(c => { if (selectAll.checked) selectedIds.add(c.id); else selectedIds.delete(c.id); });
+        contentArea.querySelectorAll('.row-check').forEach(cb => cb.checked = selectAll.checked);
+        updateBatchBar();
+      });
+    }
+    contentArea.querySelector('#cve-tbody')?.addEventListener('change', e => {
+      const cb = e.target.closest('.row-check');
+      if (!cb) return;
+      const id = Number(cb.value);
+      if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+      updateBatchBar();
+    });
 
     // Row actions
     contentArea.querySelector('#cve-tbody')?.addEventListener('click', async (e) => {
+      if (e.target.closest('.row-check')) return;
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
       const row = btn.closest('tr');
@@ -389,6 +489,8 @@ export async function render(container, user) {
       else if (action === 'inline-assess') inlineAssess(cve, btn);
       else if (action === 'ai') showToast('Execute um scan com AI habilitado para reprocessar este CVE.', 'info');
     });
+
+    updateBatchBar();
   }
 
   // ── Detail panel ──────────────────────────────────────────────────────────
@@ -476,9 +578,12 @@ export async function render(container, user) {
     // the table wrapper's overflow. Position fixed over the cell.
     const rect = cell.getBoundingClientRect();
     const width = Math.max(rect.width, 180);
+    const openUpward = rect.bottom + 190 > window.innerHeight;
+    const TRIGGER_H = 35;
+    const centeredTop = rect.top + Math.max(0, (rect.height - TRIGGER_H) / 2);
     const wrapper = document.createElement('div');
-    wrapper.className = 'custom-select-wrapper assessment-inline-select';
-    wrapper.style.cssText = `position:fixed;top:${rect.top}px;left:${rect.left}px;width:${width}px;z-index:300`;
+    wrapper.className = `custom-select-wrapper assessment-inline-select${openUpward ? ' opens-up' : ''}`;
+    wrapper.style.cssText = `position:fixed;top:${centeredTop}px;left:${rect.left}px;width:${width}px;z-index:300`;
     cell.innerHTML = '<span class="text-muted" style="font-size:11px">…</span>';
     document.body.appendChild(wrapper);
 
@@ -542,6 +647,14 @@ export async function render(container, user) {
         if ((v || null) === (cve.user_assessment || null)) { cancel(); return; }
         save(v);
       },
+    });
+
+    // Detect trigger re-click to close: stopPropagation inside the component
+    // prevents onClickOutside from firing, so we check after the click settles.
+    wrapper.querySelector('.custom-select-trigger')?.addEventListener('click', () => {
+      requestAnimationFrame(() => {
+        if (!wrapper.querySelector('.custom-select-dropdown')?.classList.contains('open')) cancel();
+      });
     });
 
     requestAnimationFrame(() => wrapper.querySelector('.custom-select-trigger')?.click());

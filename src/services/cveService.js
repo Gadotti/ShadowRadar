@@ -68,4 +68,22 @@ function updateAssessment(db, id, { user_assessment, user_notes }) {
   return cveRepository.findById(db, id);
 }
 
-module.exports = { listCves, getMacroView, updateAssessment };
+function batchUpdateAssessment(db, ids, user_assessment) {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new ValidationError('ids must be a non-empty array');
+  }
+  const validIds = ids.map(id => {
+    const n = Number(id);
+    if (!Number.isInteger(n) || n <= 0) throw new ValidationError(`Invalid id: "${id}"`);
+    return n;
+  });
+  if (user_assessment !== null && user_assessment !== undefined) {
+    if (!VALID_ASSESSMENTS.includes(user_assessment)) {
+      throw new ValidationError(`Invalid user_assessment: "${user_assessment}". Valid values: ${VALID_ASSESSMENTS.join(', ')}`);
+    }
+  }
+  const updated = cveRepository.batchUpdateAssessment(db, validIds, user_assessment ?? null);
+  return { updated };
+}
+
+module.exports = { listCves, getMacroView, updateAssessment, batchUpdateAssessment };

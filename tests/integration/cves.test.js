@@ -12,15 +12,15 @@ const { seedUsers, seedAsset, seedCve } = require('../helpers/db');
 const { startApp, stopApp, cleanupDb, req, loginAs } = require('../helpers/app');
 
 describe('cve routes', () => {
-  let server, baseUrl, editorCookie, readerCookie, cveId;
+  let server, baseUrl, editorCookie, readerCookie, cveId, cveId2;
 
   beforeAll(async () => {
     const db = getDb();
     runMigrations(db);
     await seedUsers(db);
     const assetId = seedAsset(db, { active: 1 });
-    cveId = seedCve(db, assetId, { cve_id: 'CVE-2024-0001', severity: 'HIGH' });
-    seedCve(db, assetId, { cve_id: 'CVE-2024-0002', severity: 'CRITICAL' });
+    cveId  = seedCve(db, assetId, { cve_id: 'CVE-2024-0001', severity: 'HIGH' });
+    cveId2 = seedCve(db, assetId, { cve_id: 'CVE-2024-0002', severity: 'CRITICAL' });
     const info = await startApp();
     server       = info.server;
     baseUrl      = info.baseUrl;
@@ -115,6 +115,79 @@ describe('cve routes', () => {
         body: { user_assessment: null },
       });
       expect(r.status).toBe(404);
+    });
+  });
+
+  describe('PUT /api/cves/batch-assessment', () => {
+    test('editor updates multiple CVEs and returns updated count', async () => {
+      const r = await req(baseUrl, 'PUT', '/api/cves/batch-assessment', {
+        cookie: editorCookie,
+        body: { ids: [cveId, cveId2], user_assessment: 'Accepted Risk' },
+      });
+      expect(r.status).toBe(200);
+      expect(r.data.updated).toBe(2);
+    });
+
+    test('assessment is persisted on all updated CVEs', async () => {
+      await req(baseUrl, 'PUT', '/api/cves/batch-assessment', {
+        cookie: editorCookie,
+        body: { ids: [cveId, cveId2], user_assessment: 'False Positive' },
+      });
+      const r1 = await req(baseUrl, 'GET', `/api/cves/${cveId}`,  { cookie: editorCookie });
+      const r2 = await req(baseUrl, 'GET', `/api/cves/${cveId2}`, { cookie: editorCookie });
+      expect(r1.data.user_assessment).toBe('False Positive');
+      expect(r2.data.user_assessment).toBe('False Positive');
+    });
+
+    test('only touches CVEs in the ids list', async () => {
+      const db = getDb();
+      const assetId = seedAsset(db, { name: 'Untouched-Asset', tag: '#ut' });
+      const untouchedId = seedCve(db, assetId, { cve_id: 'CVE-2024-UNTOUCHED' });
+      await req(baseUrl, 'PUT', '/api/cves/batch-assessment', {
+        cookie: editorCookie,
+        body: { ids: [cveId], user_assessment: 'Not Affected' },
+      });
+      const r = await req(baseUrl, 'GET', `/api/cves/${untouchedId}`, { cookie: editorCookie });
+      expect(r.data.user_assessment).toBeNull();
+    });
+
+    test('reader is blocked with 403', async () => {
+      const r = await req(baseUrl, 'PUT', '/api/cves/batch-assessment', {
+        cookie: readerCookie,
+        body: { ids: [cveId], user_assessment: 'Accepted Risk' },
+      });
+      expect(r.status).toBe(403);
+    });
+
+    test('returns 401 without authentication', async () => {
+      const r = await req(baseUrl, 'PUT', '/api/cves/batch-assessment', {
+        body: { ids: [cveId], user_assessment: 'Accepted Risk' },
+      });
+      expect(r.status).toBe(401);
+    });
+
+    test('returns 400 for invalid assessment value', async () => {
+      const r = await req(baseUrl, 'PUT', '/api/cves/batch-assessment', {
+        cookie: editorCookie,
+        body: { ids: [cveId], user_assessment: 'InvalidValue' },
+      });
+      expect(r.status).toBe(400);
+    });
+
+    test('returns 400 for empty ids array', async () => {
+      const r = await req(baseUrl, 'PUT', '/api/cves/batch-assessment', {
+        cookie: editorCookie,
+        body: { ids: [], user_assessment: 'Accepted Risk' },
+      });
+      expect(r.status).toBe(400);
+    });
+
+    test('returns 400 when ids is not an array', async () => {
+      const r = await req(baseUrl, 'PUT', '/api/cves/batch-assessment', {
+        cookie: editorCookie,
+        body: { ids: 'not-an-array', user_assessment: 'Accepted Risk' },
+      });
+      expect(r.status).toBe(400);
     });
   });
 });

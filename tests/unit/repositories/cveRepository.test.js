@@ -134,6 +134,42 @@ describe('cveRepository', () => {
     });
   });
 
+  describe('batchUpdateAssessment', () => {
+    test('updates assessment for all given ids', () => {
+      const id1 = seedCve(db, assetId, { cve_id: 'CVE-2024-B001' });
+      const id2 = seedCve(db, assetId, { cve_id: 'CVE-2024-B002' });
+      repo.batchUpdateAssessment(db, [id1, id2], 'Accepted Risk');
+      expect(repo.findById(db, id1).user_assessment).toBe('Accepted Risk');
+      expect(repo.findById(db, id2).user_assessment).toBe('Accepted Risk');
+    });
+
+    test('returns count of updated rows', () => {
+      const id1 = seedCve(db, assetId, { cve_id: 'CVE-2024-B003' });
+      const id2 = seedCve(db, assetId, { cve_id: 'CVE-2024-B004' });
+      const count = repo.batchUpdateAssessment(db, [id1, id2], 'False Positive');
+      expect(count).toBe(2);
+    });
+
+    test('sets evaluated_at on updated records', () => {
+      const id = seedCve(db, assetId, { cve_id: 'CVE-2024-B005' });
+      repo.batchUpdateAssessment(db, [id], 'Not Affected');
+      expect(repo.findById(db, id).evaluated_at).toBeTruthy();
+    });
+
+    test('does not affect CVEs outside the id list', () => {
+      const id1 = seedCve(db, assetId, { cve_id: 'CVE-2024-B006' });
+      const id2 = seedCve(db, assetId, { cve_id: 'CVE-2024-B007' });
+      repo.batchUpdateAssessment(db, [id1], 'Accepted Risk');
+      expect(repo.findById(db, id2).user_assessment).toBeNull();
+    });
+
+    test('clears assessment when null passed', () => {
+      const id = seedCve(db, assetId, { cve_id: 'CVE-2024-B008', user_assessment: 'Accepted Risk' });
+      repo.batchUpdateAssessment(db, [id], null);
+      expect(repo.findById(db, id).user_assessment).toBeNull();
+    });
+  });
+
   describe('getLastScanInfo', () => {
     test('returns null last_completed_at when no completed scan', () => {
       const { last_completed_at } = repo.getLastScanInfo(db);

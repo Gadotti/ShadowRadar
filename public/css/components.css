@@ -449,6 +449,21 @@ tbody td            { padding: 10px 14px; vertical-align: middle; }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* Opens-upward variant */
+.opens-up .custom-select-dropdown {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+.opens-up .custom-select-dropdown.open {
+  animation: custom-select-in-up 0.15s ease forwards;
+}
+@keyframes custom-select-in-up {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.opens-up .custom-select-trigger .custom-select-chevron          { transform: rotate(180deg); }
+.opens-up .custom-select-trigger.open .custom-select-chevron     { transform: rotate(0deg); }
+
 .custom-select-option {
   display: flex;
   align-items: center;

@@ -109,4 +109,54 @@ describe('cveService', () => {
       }
     });
   });
+
+  describe('batchUpdateAssessment', () => {
+    test('updates multiple CVEs and returns updated count', () => {
+      const assetId = seedAsset(db);
+      const id1 = seedCve(db, assetId, { cve_id: 'CVE-2024-BA01' });
+      const id2 = seedCve(db, assetId, { cve_id: 'CVE-2024-BA02' });
+      const result = cveService.batchUpdateAssessment(db, [id1, id2], 'Accepted Risk');
+      expect(result).toEqual({ updated: 2 });
+    });
+
+    test('throws ValidationError for empty ids array', () => {
+      expect(() => cveService.batchUpdateAssessment(db, [], 'Accepted Risk'))
+        .toThrow(ValidationError);
+    });
+
+    test('throws ValidationError when ids is not an array', () => {
+      expect(() => cveService.batchUpdateAssessment(db, null, 'Accepted Risk'))
+        .toThrow(ValidationError);
+    });
+
+    test('throws ValidationError for non-integer id in array', () => {
+      const assetId = seedAsset(db);
+      const id = seedCve(db, assetId, { cve_id: 'CVE-2024-BA03' });
+      expect(() => cveService.batchUpdateAssessment(db, [id, 'bad'], 'Accepted Risk'))
+        .toThrow(ValidationError);
+    });
+
+    test('throws ValidationError for invalid assessment value', () => {
+      const assetId = seedAsset(db);
+      const id = seedCve(db, assetId, { cve_id: 'CVE-2024-BA04' });
+      expect(() => cveService.batchUpdateAssessment(db, [id], 'InvalidValue'))
+        .toThrow(ValidationError);
+    });
+
+    test('clears assessment when null passed', () => {
+      const assetId = seedAsset(db);
+      const id = seedCve(db, assetId, { cve_id: 'CVE-2024-BA05', user_assessment: 'Accepted Risk' });
+      const result = cveService.batchUpdateAssessment(db, [id], null);
+      expect(result).toEqual({ updated: 1 });
+    });
+
+    test('accepts all valid assessment values', () => {
+      const assetId = seedAsset(db);
+      const validValues = ['Acknowledge/Mitigating', 'Accepted Risk', 'Not Affected', 'False Positive'];
+      for (const val of validValues) {
+        const id = seedCve(db, assetId, { cve_id: `CVE-2024-BVAL-${val.replace(/\W/g, '')}` });
+        expect(() => cveService.batchUpdateAssessment(db, [id], val)).not.toThrow();
+      }
+    });
+  });
 });

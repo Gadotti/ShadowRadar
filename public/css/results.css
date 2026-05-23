@@ -159,3 +159,80 @@
   padding: 10px 12px;
   resize: vertical;
 }
+
+/* ===== BATCH CHECKBOXES ===== */
+.table-wrapper input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  transition: background var(--transition), border-color var(--transition);
+}
+.table-wrapper input[type="checkbox"]:hover {
+  border-color: rgba(var(--rgb-primary), 0.55);
+  background: rgba(var(--rgb-primary), 0.06);
+}
+.table-wrapper input[type="checkbox"]:checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.table-wrapper input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+.table-wrapper input[type="checkbox"]:indeterminate {
+  background: rgba(var(--rgb-primary), 0.15);
+  border-color: var(--color-primary);
+}
+.table-wrapper input[type="checkbox"]:indeterminate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 7px;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 1px;
+}
+
+/* ===== BATCH ACTION BAR ===== */
+.batch-bar {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  z-index: 150;
+  white-space: nowrap;
+}
+
+.batch-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  padding-right: 10px;
+  border-right: 1px solid var(--color-border);
+  margin-right: 2px;
+}

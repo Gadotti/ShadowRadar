@@ -40,6 +40,16 @@ router.get('/:id', (req, res) => {
   }
 });
 
+router.put('/batch-assessment', authorize('editor'), (req, res) => {
+  try {
+    const { ids, user_assessment } = req.body || {};
+    const result = cveService.batchUpdateAssessment(getDb(), ids, user_assessment);
+    return res.json(result);
+  } catch (err) {
+    return handleError(res, err);
+  }
+});
+
 router.put('/:id/assessment', authorize('editor'), (req, res) => {
   try {
     const updated = cveService.updateAssessment(getDb(), Number(req.params.id), req.body || {});
