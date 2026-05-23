@@ -20,6 +20,13 @@ function fmtDate(val) {
 }
 const pad = n => String(n).padStart(2, '0');
 
+function fmtDateOnly(val) {
+  if (!val) return '—';
+  const d = new Date(val.length === 10 ? val + 'T00:00:00' : val);
+  if (isNaN(d)) return val;
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+}
+
 function escHtml(s) {
   return String(s ?? '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -92,9 +99,9 @@ function tableHTML(items, total, page, pageSize, isEditor) {
     <tr data-id="${a.id}" data-name="${escHtml(a.name)}">
       <td><strong>${escHtml(a.name)}</strong></td>
       <td>${a.tag ? `<code>${escHtml(a.tag)}</code>` : '<span class="text-muted">—</span>'}</td>
-      <td class="text-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(a.description || '—')}</td>
       <td><code>${escHtml(a.current_version)}</code></td>
       <td>${statusBadge(a.active)}</td>
+      <td class="text-muted">${fmtDateOnly(a.cve_start_date)}</td>
       <td class="text-muted">${fmtDate(a.last_scan)}</td>
       <td>${a.cve_count ?? 0}</td>
       ${isEditor ? `
@@ -120,8 +127,8 @@ function tableHTML(items, total, page, pageSize, isEditor) {
     <div class="table-wrapper">
       <table>
         <thead><tr>
-          <th>Nome</th><th>Tag</th><th>Descrição</th><th>Versão</th>
-          <th>Status</th><th>Último Scan</th><th>CVEs</th>
+          <th>Nome</th><th>Tag</th><th>Versão</th>
+          <th>Status</th><th>Data Inicial CVEs</th><th>Último Scan</th><th>CVEs</th>
           ${isEditor ? '<th>Ações</th>' : ''}
         </tr></thead>
         <tbody id="tbody">${rows}</tbody>
@@ -220,8 +227,8 @@ export function render(container, user) {
     const skCols = isEditor ? 8 : 7;
     tableArea.innerHTML = `<div class="table-wrapper"><table>
       <thead><tr>
-        <th>Nome</th><th>Tag</th><th>Descrição</th><th>Versão</th>
-        <th>Status</th><th>Último Scan</th><th>CVEs</th>
+        <th>Nome</th><th>Tag</th><th>Versão</th>
+        <th>Status</th><th>Data Inicial CVEs</th><th>Último Scan</th><th>CVEs</th>
         ${isEditor ? '<th>Ações</th>' : ''}
       </tr></thead>
       <tbody>${skeletonRows(skCols)}</tbody>
