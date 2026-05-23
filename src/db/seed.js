@@ -41,7 +41,8 @@ const CONFIG_DEFAULTS = [
   { key: 'ai.max_tokens',     value: '16000' },
   { key: 'ai.temperature',    value: '0' },
   { key: 'ai.batch_size',     value: '20' },
-  { key: 'scan.script_path',  value: './scripts/scan.py' },
+  { key: 'scan.script_path',       value: './scripts/scan.py' },
+  { key: 'scan.notification_hook', value: '' },
 ];
 
 async function seedUsers(db) {

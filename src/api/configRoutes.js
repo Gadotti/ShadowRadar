@@ -46,4 +46,21 @@ router.put('/ai', authorize('editor'), (req, res) => {
   }
 });
 
+router.get('/scan', authorize('editor'), (req, res) => {
+  try {
+    return res.json(configService.getScanConfig(getDb()));
+  } catch (err) {
+    return handleError(res, err);
+  }
+});
+
+router.put('/scan', authorize('editor'), (req, res) => {
+  try {
+    configService.saveScanConfig(getDb(), req.body || {});
+    return res.json(configService.getScanConfig(getDb()));
+  } catch (err) {
+    return handleError(res, err);
+  }
+});
+
 module.exports = router;

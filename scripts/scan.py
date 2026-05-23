@@ -62,6 +62,7 @@ _CLAUDE_API_KEY_ENCRYPTED = ""                       # ai.api_key_encrypted (cip
 _AI_ENABLED = True                                   # ai.enabled
 _NVD_PAGE_SIZE = 50                                  # nist.page_size
 _NVD_API_KEY = ""                                    # nist.api_key
+_NOTIFICATION_HOOK = ""                              # scan.notification_hook
 
 # Valores de assessment que dispensam reprocessamento pela IA mesmo com versão diferente
 ASSESSMENTS_ISENTOS = {"False Positive", "Accepted Risk", "Not Affected"}
@@ -634,7 +635,7 @@ def send_notification(notification_hook: str, scan_timestamp: str, new_cves_foun
     com novos CVEs identificados na execução atual.
     """
     if not notification_hook:
-        msg = "Notificação não enviada: --notification-hook não definido."
+        msg = "Notificação não enviada: scan.notification_hook não configurado."
         print(msg)
         _write_log(msg, log_dir)
         return
@@ -900,7 +901,7 @@ def _decriptar_chave_api(encrypted_str: str) -> str:
 
 def aplicar_config_db(cfg: dict, log_dir: Path) -> None:
     """Sobrescreve as constantes globais com valores vindos da tabela config."""
-    global _NVD_PAGE_SIZE, _NVD_API_KEY
+    global _NVD_PAGE_SIZE, _NVD_API_KEY, _NOTIFICATION_HOOK
     global _AI_ENABLED, _CLAUDE_MODEL, _CLAUDE_MAX_TOKENS, _CLAUDE_TEMPERATURE
     global _CLAUDE_BATCH_SIZE, _CLAUDE_API_KEY_ENV, CLAUDE_API_URL
     global _CLAUDE_API_KEY_SOURCE, _CLAUDE_API_KEY_ENCRYPTED
@@ -919,6 +920,7 @@ def aplicar_config_db(cfg: dict, log_dir: Path) -> None:
 
     _NVD_PAGE_SIZE = _int("nist.page_size", _NVD_PAGE_SIZE)
     _NVD_API_KEY = (cfg.get("nist.api_key") or "").strip()
+    _NOTIFICATION_HOOK = (cfg.get("scan.notification_hook") or "").strip()
 
     _AI_ENABLED = (cfg.get("ai.enabled", "true").strip().lower() == "true")
     _CLAUDE_MODEL = (cfg.get("ai.model") or _CLAUDE_MODEL).strip()
@@ -1271,7 +1273,7 @@ def executar_scan(db_path: str, asset_id_filtro: int, notification_hook: str, lo
         conn.close()
 
     if relatorio:
-        send_notification(notification_hook, relatorio["last_scan"], new_cves_found, log_dir)
+        send_notification(notification_hook or _NOTIFICATION_HOOK, relatorio["last_scan"], new_cves_found, log_dir)
 
 
 # --- Execução ---

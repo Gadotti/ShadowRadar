@@ -108,4 +108,20 @@ function saveAiConfig(db, { enabled, api_url, api_key_source, api_key_env, api_k
   configRepository.setMany(db, entries);
 }
 
-module.exports = { getNistConfig, saveNistConfig, getAiConfig, saveAiConfig };
+function getScanConfig(db) {
+  return {
+    notification_hook: configRepository.get(db, 'scan.notification_hook') || '',
+  };
+}
+
+function saveScanConfig(db, { notification_hook }) {
+  const hook = (notification_hook || '').trim();
+  if (hook) {
+    try { new URL(hook); } catch {
+      throw new ValidationError(`notification_hook must be a valid URL, got: ${hook}`);
+    }
+  }
+  configRepository.setMany(db, { 'scan.notification_hook': hook });
+}
+
+module.exports = { getNistConfig, saveNistConfig, getAiConfig, saveAiConfig, getScanConfig, saveScanConfig };

@@ -1,5 +1,5 @@
 /* ===== CONFIG PAGES ===== */
-/* Used by: configNist, configAi, scan, settings */
+/* Used by: configScan, configAi, scan, settings */
 
 .alert-warning {
   background: rgba(var(--rgb-warning), 0.1);
@@ -30,6 +30,15 @@
 }
 
 .info-value { color: var(--color-text); font-size: 13px; }
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0 0 12px;
+}
 
 .scan-counters {
   font-size: 14px;

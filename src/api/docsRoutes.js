@@ -675,6 +675,55 @@ function buildSpec() {
         },
       },
 
+      '/api/config/scan': {
+        get: {
+          tags: ['Config'],
+          summary: 'Get scan config',
+          description: 'Requires `editor` role.',
+          responses: {
+            200: {
+              description: 'Scan configuration.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      notification_hook: { type: 'string', description: 'Webhook URL for post-scan notifications', example: 'https://example.com/webhook' },
+                    },
+                  },
+                },
+              },
+            },
+            401: { $ref: '#/components/responses/Unauthorized' },
+            403: { $ref: '#/components/responses/Forbidden' },
+          },
+        },
+        put: {
+          tags: ['Config'],
+          summary: 'Save scan config',
+          description: 'Requires `editor` role.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    notification_hook: { type: 'string', description: 'Webhook URL to POST when new CVEs are found. Empty string to disable.' },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: { description: 'Updated scan configuration.' },
+            400: { $ref: '#/components/responses/BadRequest' },
+            401: { $ref: '#/components/responses/Unauthorized' },
+            403: { $ref: '#/components/responses/Forbidden' },
+          },
+        },
+      },
+
       '/api/config/ai': {
         get: {
           tags: ['Config'],

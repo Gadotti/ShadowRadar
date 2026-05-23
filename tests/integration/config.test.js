@@ -106,6 +106,62 @@ describe('config routes', () => {
     });
   });
 
+  // ── Scan ─────────────────────────────────────────────────────────────────
+
+  describe('GET /api/config/scan', () => {
+    test('returns notification_hook as empty string initially', async () => {
+      const r = await req(baseUrl, 'GET', '/api/config/scan', { cookie: editorCookie });
+      expect(r.status).toBe(200);
+      expect(typeof r.data.notification_hook).toBe('string');
+    });
+
+    test('reader is blocked with 403', async () => {
+      const r = await req(baseUrl, 'GET', '/api/config/scan', { cookie: readerCookie });
+      expect(r.status).toBe(403);
+    });
+
+    test('unauthenticated is blocked with 401', async () => {
+      const r = await req(baseUrl, 'GET', '/api/config/scan');
+      expect(r.status).toBe(401);
+    });
+  });
+
+  describe('PUT /api/config/scan', () => {
+    test('saves a valid notification_hook URL', async () => {
+      const r = await req(baseUrl, 'PUT', '/api/config/scan', {
+        cookie: editorCookie,
+        body: { notification_hook: 'https://example.com/webhook' },
+      });
+      expect(r.status).toBe(200);
+      expect(r.data.notification_hook).toBe('https://example.com/webhook');
+    });
+
+    test('clears notification_hook when set to empty string', async () => {
+      const r = await req(baseUrl, 'PUT', '/api/config/scan', {
+        cookie: editorCookie,
+        body: { notification_hook: '' },
+      });
+      expect(r.status).toBe(200);
+      expect(r.data.notification_hook).toBe('');
+    });
+
+    test('returns 400 for invalid URL', async () => {
+      const r = await req(baseUrl, 'PUT', '/api/config/scan', {
+        cookie: editorCookie,
+        body: { notification_hook: 'not-a-url' },
+      });
+      expect(r.status).toBe(400);
+    });
+
+    test('reader is blocked with 403', async () => {
+      const r = await req(baseUrl, 'PUT', '/api/config/scan', {
+        cookie: readerCookie,
+        body: { notification_hook: '' },
+      });
+      expect(r.status).toBe(403);
+    });
+  });
+
   // ── AI — general ─────────────────────────────────────────────────────────
 
   describe('GET /api/config/ai', () => {

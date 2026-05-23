@@ -5,7 +5,7 @@ const MENU = [
   { path: '/assets',      icon: '◈', label: 'Ativos' },
   { path: '/results',     icon: '⚑', label: 'Resultados CVE' },
   { path: '/scan',        icon: '⟳', label: 'Executar Scan',  editorOnly: true },
-  { path: '/config/nist', icon: '⚙', label: 'Config NIST',    editorOnly: true },
+  { path: '/config/scan', icon: '⚙', label: 'Config Scan',    editorOnly: true },
   { path: '/config/ai',   icon: '✦', label: 'Config AI',      editorOnly: true },
   { path: '/settings',    icon: '⚿', label: 'API Keys',       editorOnly: true },
   { path: '/users',       icon: '◉', label: 'Usuários' },

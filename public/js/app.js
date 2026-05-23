@@ -7,13 +7,13 @@ const ROUTES = {
   '/assets':      () => import('./pages/assets.js'),
   '/results':     () => import('./pages/results.js'),
   '/scan':        () => import('./pages/scan.js'),
-  '/config/nist': () => import('./pages/configNist.js'),
+  '/config/scan': () => import('./pages/configScan.js'),
   '/config/ai':   () => import('./pages/configAi.js'),
   '/settings':    () => import('./pages/settings.js'),
   '/users':       () => import('./pages/users.js'),
 };
 
-const EDITOR_ROUTES = ['/scan', '/config/nist', '/config/ai', '/settings'];
+const EDITOR_ROUTES = ['/scan', '/config/scan', '/config/ai', '/settings'];
 
 let currentUser = null;
 
