@@ -3,7 +3,7 @@
 const assetRepository = require('../repositories/assetRepository');
 const { NotFoundError, ConflictError, ValidationError } = require('../models/errors');
 
-function validateAssetData({ name, current_version, cve_start_date }) {
+function validateAssetData({ name, current_version, cve_start_date, last_scanned_pub_end }) {
   if (!name || !String(name).trim()) {
     throw new ValidationError('name is required');
   }
@@ -18,6 +18,9 @@ function validateAssetData({ name, current_version, cve_start_date }) {
     if (cve_start_date > today) {
       throw new ValidationError('cve_start_date cannot be a future date');
     }
+  }
+  if (last_scanned_pub_end && !/^\d{4}-\d{2}-\d{2}$/.test(last_scanned_pub_end)) {
+    throw new ValidationError('last_scanned_pub_end must be in YYYY-MM-DD format');
   }
 }
 

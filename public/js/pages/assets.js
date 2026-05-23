@@ -10,7 +10,11 @@ function debounce(fn, ms) {
 
 function fmtDate(val) {
   if (!val) return '—';
-  const d = new Date(val.includes('T') ? val : val.replace(' ', 'T'));
+  // date-only strings (YYYY-MM-DD) must be appended with time so the browser
+  // parses them as local time; without it, new Date('YYYY-MM-DD') is UTC midnight
+  // which shifts the displayed day back by the local UTC offset (e.g. UTC-3 → day-1).
+  const normalized = val.length === 10 ? val + 'T00:00:00' : (val.includes('T') ? val : val.replace(' ', 'T'));
+  const d = new Date(normalized);
   if (isNaN(d)) return val;
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
@@ -166,6 +170,11 @@ function modalHTML(asset) {
               <input type="date" id="m-cve-date" value="${v.cve_start_date || ''}" max="${today}">
             </div>
           </div>
+          ${isEdit ? `
+          <div class="form-group">
+            <label for="m-last-scan" title="Retroceda esta data para forçar reprocessamento do scan a partir desse ponto">Data do Último Scan</label>
+            <input type="date" id="m-last-scan" value="${v.last_scanned_pub_end ? v.last_scanned_pub_end.slice(0, 10) : ''}">
+          </div>` : ''}
           <div class="form-group" style="flex-direction:row;align-items:center;gap:12px;margin-bottom:20px">
             <label style="margin:0;color:var(--color-text)">Ativo</label>
             <label class="toggle">
@@ -341,13 +350,14 @@ export function render(container, user) {
       e.preventDefault();
       errorEl.hidden = true;
 
-      const name    = overlay.querySelector('#m-name').value.trim();
-      const tag     = overlay.querySelector('#m-tag').value.trim();
-      const desc    = overlay.querySelector('#m-desc').value.trim();
-      const url     = overlay.querySelector('#m-url').value.trim();
-      const version = overlay.querySelector('#m-version').value.trim();
-      const cveDate = overlay.querySelector('#m-cve-date').value;
-      const isActive = overlay.querySelector('#m-active').checked;
+      const name         = overlay.querySelector('#m-name').value.trim();
+      const tag          = overlay.querySelector('#m-tag').value.trim();
+      const desc         = overlay.querySelector('#m-desc').value.trim();
+      const url          = overlay.querySelector('#m-url').value.trim();
+      const version      = overlay.querySelector('#m-version').value.trim();
+      const cveDate      = overlay.querySelector('#m-cve-date').value;
+      const lastScanDate = isEdit ? (overlay.querySelector('#m-last-scan')?.value || null) : null;
+      const isActive     = overlay.querySelector('#m-active').checked;
 
       // Client-side validation
       if (!name)    { setError(errorEl, 'Nome é obrigatório.'); return; }
@@ -367,6 +377,7 @@ export function render(container, user) {
         current_version: version,
         cve_start_date: cveDate || null,
         active: isActive ? 1 : 0,
+        ...(isEdit && { last_scanned_pub_end: lastScanDate || null }),
       };
 
       try {

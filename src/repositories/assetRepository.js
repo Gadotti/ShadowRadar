@@ -21,7 +21,7 @@ function findAll(db, { search = null, active = 'all', page = 1, pageSize = 20 } 
   const offset = (page - 1) * pageSize;
   const items = db.prepare(`
     SELECT a.*, COUNT(c.id) AS cve_count,
-           COALESCE(MAX(c.scanned_at), a.last_scanned_pub_end) AS last_scan
+           COALESCE(a.last_scanned_pub_end, MAX(c.scanned_at)) AS last_scan
     FROM assets a
     LEFT JOIN asset_cves c ON c.asset_id = a.id
     ${where}
@@ -56,13 +56,14 @@ function create(db, { name, tag, description, url, current_version, cve_start_da
   return result.lastInsertRowid;
 }
 
-function update(db, id, { name, tag, description, url, current_version, cve_start_date, active }) {
+function update(db, id, { name, tag, description, url, current_version, cve_start_date, active, last_scanned_pub_end }) {
   db.prepare(`
     UPDATE assets
     SET name=?, tag=?, description=?, url=?, current_version=?, cve_start_date=?, active=?,
+        last_scanned_pub_end=?,
         updated_at=strftime('%Y-%m-%dT%H:%M:%SZ','now')
     WHERE id=?
-  `).run(name, tag ?? null, description ?? null, url ?? null, current_version, cve_start_date ?? null, active ? 1 : 0, id);
+  `).run(name, tag ?? null, description ?? null, url ?? null, current_version, cve_start_date ?? null, active ? 1 : 0, last_scanned_pub_end ?? null, id);
 }
 
 function remove(db, id) {
@@ -76,8 +77,11 @@ function setActive(db, id, active) {
 }
 
 function getLastScanDate(db, id) {
-  const row = db.prepare('SELECT MAX(scanned_at) AS last_scan FROM asset_cves WHERE asset_id = ?').get(id);
-  return row ? row.last_scan : null;
+  const row = db.prepare(
+    'SELECT last_scanned_pub_end, (SELECT MAX(scanned_at) FROM asset_cves WHERE asset_id = ?) AS cve_last FROM assets WHERE id = ?'
+  ).get(id, id);
+  if (!row) return null;
+  return row.last_scanned_pub_end ?? row.cve_last ?? null;
 }
 
 function getCveCount(db, id) {

@@ -84,6 +84,28 @@ describe('assetService', () => {
       expect(() => assetService.updateAsset(db, 9999, { name: 'X', current_version: '1.0', cve_start_date: '2024-01-01' }))
         .toThrow(NotFoundError);
     });
+
+    test('updates last_scanned_pub_end to a past date', () => {
+      const id = seedAsset(db);
+      const updated = assetService.updateAsset(db, id, {
+        name: 'App', current_version: '1.0', last_scanned_pub_end: '2024-01-15',
+      });
+      expect(updated.last_scanned_pub_end).toBe('2024-01-15');
+    });
+
+    test('clears last_scanned_pub_end when set to null', () => {
+      const id = seedAsset(db);
+      assetService.updateAsset(db, id, { name: 'App', current_version: '1.0', last_scanned_pub_end: '2024-01-15' });
+      const updated = assetService.updateAsset(db, id, { name: 'App', current_version: '1.0', last_scanned_pub_end: null });
+      expect(updated.last_scanned_pub_end).toBeNull();
+    });
+
+    test('throws ValidationError for invalid last_scanned_pub_end format', () => {
+      const id = seedAsset(db);
+      expect(() => assetService.updateAsset(db, id, {
+        name: 'App', current_version: '1.0', last_scanned_pub_end: '15/01/2024',
+      })).toThrow(ValidationError);
+    });
   });
 
   describe('deleteAsset', () => {

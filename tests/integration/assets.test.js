@@ -128,6 +128,35 @@ describe('asset routes', () => {
       expect(r.data.current_version).toBe('2.0');
     });
 
+    test('editor can roll back last_scanned_pub_end to force rescan', async () => {
+      const created = await req(baseUrl, 'POST', '/api/assets', {
+        cookie: editorCookie,
+        body: { name: 'RescanAsset', tag: '#rs', current_version: '1.0', cve_start_date: '2024-01-01', active: 1 },
+      });
+      const r = await req(baseUrl, 'PUT', `/api/assets/${created.data.id}`, {
+        cookie: editorCookie,
+        body: {
+          name: 'RescanAsset', tag: '#rs', current_version: '1.0',
+          cve_start_date: '2024-01-01', active: 1,
+          last_scanned_pub_end: '2024-03-01',
+        },
+      });
+      expect(r.status).toBe(200);
+      expect(r.data.last_scanned_pub_end).toBe('2024-03-01');
+    });
+
+    test('returns 400 for invalid last_scanned_pub_end format', async () => {
+      const created = await req(baseUrl, 'POST', '/api/assets', {
+        cookie: editorCookie,
+        body: { name: 'BadScanDate', tag: '#bsd', current_version: '1.0', cve_start_date: '2024-01-01' },
+      });
+      const r = await req(baseUrl, 'PUT', `/api/assets/${created.data.id}`, {
+        cookie: editorCookie,
+        body: { name: 'BadScanDate', tag: '#bsd', current_version: '1.0', active: 1, last_scanned_pub_end: '01/03/2024' },
+      });
+      expect(r.status).toBe(400);
+    });
+
     test('returns 404 for unknown id', async () => {
       const r = await req(baseUrl, 'PUT', '/api/assets/9999', {
         cookie: editorCookie,
