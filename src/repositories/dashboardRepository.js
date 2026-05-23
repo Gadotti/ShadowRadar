@@ -1,7 +1,10 @@
 'use strict';
 
 function buildCveJoin({ asset_ids = [], published_after = null, published_before = null, severity = [] } = {}) {
-  const conditions = ['a.active = 1'];
+  const conditions = [
+    'a.active = 1',
+    "(ac.user_assessment IS NULL OR ac.user_assessment NOT IN ('Not Affected','False Positive'))",
+  ];
   const params = [];
 
   if (asset_ids.length) {

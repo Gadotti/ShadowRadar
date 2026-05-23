@@ -98,12 +98,12 @@ function getMacroView(db, { asset_id = null, active_assets_only = false } = {}) 
       a.tag  AS asset_tag,
       a.current_version AS asset_version,
       MAX(ac.scanned_at) AS last_scan,
-      COUNT(ac.id) AS total,
-      COUNT(CASE WHEN ac.severity='CRITICAL' THEN 1 END) AS critical,
-      COUNT(CASE WHEN ac.severity='HIGH'     THEN 1 END) AS high,
-      COUNT(CASE WHEN ac.severity='MEDIUM'   THEN 1 END) AS medium,
-      COUNT(CASE WHEN ac.severity='LOW'      THEN 1 END) AS low,
-      COUNT(CASE WHEN ac.severity='NONE'     THEN 1 END) AS none,
+      COUNT(CASE WHEN ac.user_assessment IS NULL OR ac.user_assessment NOT IN ('Not Affected','False Positive') THEN 1 END) AS total,
+      COUNT(CASE WHEN ac.severity='CRITICAL' AND (ac.user_assessment IS NULL OR ac.user_assessment NOT IN ('Not Affected','False Positive')) THEN 1 END) AS critical,
+      COUNT(CASE WHEN ac.severity='HIGH'     AND (ac.user_assessment IS NULL OR ac.user_assessment NOT IN ('Not Affected','False Positive')) THEN 1 END) AS high,
+      COUNT(CASE WHEN ac.severity='MEDIUM'   AND (ac.user_assessment IS NULL OR ac.user_assessment NOT IN ('Not Affected','False Positive')) THEN 1 END) AS medium,
+      COUNT(CASE WHEN ac.severity='LOW'      AND (ac.user_assessment IS NULL OR ac.user_assessment NOT IN ('Not Affected','False Positive')) THEN 1 END) AS low,
+      COUNT(CASE WHEN ac.severity='NONE'     AND (ac.user_assessment IS NULL OR ac.user_assessment NOT IN ('Not Affected','False Positive')) THEN 1 END) AS none,
       COUNT(CASE WHEN ac.user_assessment IS NULL THEN 1 END) AS pending,
       COALESCE(MAX(CASE
         WHEN ac.user_assessment IN ('Not Affected','False Positive') THEN 0
