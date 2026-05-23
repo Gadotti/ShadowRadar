@@ -15,7 +15,7 @@ let _currentRunId = null;
 let _cancelled = false;
 
 function nowStr() {
-  return new Date().toISOString().replace('T', ' ').slice(0, 19);
+  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 function getCurrentStatus(db) {

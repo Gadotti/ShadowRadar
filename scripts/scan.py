@@ -1040,7 +1040,7 @@ def _criar_scan_run(conn: sqlite3.Connection, started_at: str) -> int:
 
 def _finalizar_scan_run(conn: sqlite3.Connection, run_id: int, status: str, error_message: str = None) -> None:
     """Atualiza finished_at, status e (opcionalmente) error_message do scan_run."""
-    finished_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    finished_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if error_message:
         conn.execute(
             "UPDATE scan_runs SET status=?, finished_at=?, error_message=? WHERE id=?",
@@ -1191,7 +1191,7 @@ def executar_scan(db_path: str, asset_id_filtro: int, notification_hook: str, lo
     cfg = carregar_config_db(conn)
     aplicar_config_db(cfg, log_dir)
 
-    started_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    started_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     run_id = localizar_scan_run(conn)
     if run_id is None:
