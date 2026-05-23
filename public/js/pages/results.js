@@ -16,7 +16,7 @@ const SEVERITIES      = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'NONE'];
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
-function escHtml(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escHtml(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function pad(n) { return String(n).padStart(2,'0'); }
 function fmtDate(val) {
   if (!val) return '—';
