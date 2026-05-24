@@ -11,7 +11,7 @@
   --color-danger:        #f85149;
   --color-warning:       #e3b341;
   --color-success:       #3fb950;
-  --color-severity-high: #d29922;
+  --color-severity-high: #f0883e;
   --color-tooltip:       #2d333b;
 
   /* RGB channels for rgba() tints */
@@ -20,7 +20,7 @@
   --rgb-danger:         248, 81, 73;
   --rgb-warning:        227, 179, 65;
   --rgb-success:        63, 185, 80;
-  --rgb-severity-high:  210, 153, 34;
+  --rgb-severity-high:  240, 136, 62;
   --rgb-text-muted:     139, 148, 158;
 
   --sidebar-width-expanded:  220px;

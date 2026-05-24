@@ -4,7 +4,7 @@ import { initCustomSelect } from '../components/custom-select.js';
 // ── Colour constants ────────────────────────────────────────────────────────
 const SEV_COLORS = {
   CRITICAL: '#f85149',
-  HIGH:     '#d29922',
+  HIGH:     '#f0883e',
   MEDIUM:   '#e3b341',
   LOW:      '#388bfd',
   NONE:     '#8b949e',
