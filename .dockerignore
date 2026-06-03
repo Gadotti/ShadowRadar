@@ -5,6 +5,13 @@ data/
 _deploys/
 scripts/logs/
 scripts/__pycache__/
+scripts/scan_stub.py
 .git/
 .claude/
 tests/
+imgs/
+CLAUDE.md
+jest.config.js
+release.py
+docker-compose.yml
+Dockerfile

@@ -15,6 +15,11 @@ EXTRA_IGNORED_PATHS = {
     'jest.config.js',
     'imgs',
     'scripts/scan_stub.py',
+    '.github',
+    '.dockerignore',
+    'docker-compose.yml',
+    'Dockerfile',
+    'scripts/logs',
 }
 
 # Files that should be renamed with -SAMPLE suffix in the zip
