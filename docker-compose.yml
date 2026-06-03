@@ -1,0 +1,20 @@
+services:
+  shadowradar:
+    image: ghcr.io/gadotti/shadowradar:latest
+    restart: unless-stopped
+    ports:
+      - "3500:3500"
+    volumes:
+      - shadowradar_data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3500
+      - DB_PATH=/app/data/shadowradar.db
+      - JWT_SECRET=TROQUE_POR_STRING_ALEATORIA_DE_ALTA_ENTROPIA
+      - LOG_LEVEL=info
+      # Obrigatório apenas ao usar modo "Chave direta" na configuração de AI
+      # - ENCRYPTION_KEY=TROQUE_POR_STRING_HEX_64_CHARS
+
+volumes:
+  shadowradar_data:
+    name: shadowradar_data

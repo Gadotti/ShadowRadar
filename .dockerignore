@@ -1,0 +1,10 @@
+node_modules/
+data/
+.env
+.env.local
+_deploys/
+scripts/logs/
+scripts/__pycache__/
+.git/
+.claude/
+tests/
