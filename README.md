@@ -38,6 +38,24 @@ Optional: a [NIST NVD API key](https://nvd.nist.gov/developers/request-an-api-ke
 
 ## Quick Start
 
+### Option A — Docker (recommended)
+
+```bash
+# 1. Create a docker-compose.yml with the snippet from the Docker section below
+#    and fill in JWT_SECRET
+
+# 2. Pull and start
+docker compose pull
+docker compose up -d
+
+# 3. Create your first user
+docker exec -it shadowradar node scripts/create-user.js
+```
+
+Open [http://localhost:3500](http://localhost:3500) in your browser. See the [Docker](#docker) section for the full `docker-compose.yml` and all configuration options.
+
+### Option B — Local (Node.js)
+
 ```bash
 # 1. Clone and install Node dependencies
 git clone https://github.com/Gadotti/ShadowRadar
