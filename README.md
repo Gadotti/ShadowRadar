@@ -199,6 +199,108 @@ scripts/
 
 ---
 
+## Docker
+
+ShadowRadar is published as a container image on the [GitHub Container Registry](https://github.com/Gadotti/shadowradar/pkgs/container/shadowradar). The image bundles Node.js and Python 3 in a single runtime — no separate containers needed.
+
+### Requirements
+
+- Docker 24+
+- Docker Compose v2
+
+### Running with Docker Compose
+
+Copy the snippet below into a `docker-compose.yml` on your server, fill in the required values, and start the stack:
+
+```yaml
+services:
+  shadowradar:
+    image: ghcr.io/gadotti/shadowradar:latest
+    restart: unless-stopped
+    ports:
+      - "3500:3500"
+    volumes:
+      - shadowradar_data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3500
+      - DB_PATH=/app/data/shadowradar.db
+      - JWT_SECRET=TROQUE_POR_STRING_ALEATORIA_DE_ALTA_ENTROPIA
+      - LOG_LEVEL=info
+      # Required only when using Direct key mode in AI config
+      # - ENCRYPTION_KEY=TROQUE_POR_STRING_HEX_64_CHARS
+
+volumes:
+  shadowradar_data:
+    name: shadowradar_data
+```
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+The application will be available at `http://localhost:3500`. Database migrations run automatically on startup.
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `JWT_SECRET` | Yes | Random string ≥ 32 characters. Generate with: `openssl rand -base64 32` |
+| `DB_PATH` | Yes | Must be `/app/data/shadowradar.db` when using the volume as configured above |
+| `PORT` | No | Defaults to `3500` |
+| `NODE_ENV` | No | Set to `production` in container deployments |
+| `LOG_LEVEL` | No | `debug`, `info`, `warn`, or `error`. Defaults to `info` |
+| `ENCRYPTION_KEY` | No | 64-character hex string. Required only when storing the AI API key directly in the database. Generate with: `openssl rand -hex 32` |
+
+### First-time setup
+
+After the container is running, create your first user:
+
+```bash
+docker exec -it shadowradar node scripts/create-user.js
+```
+
+### Persistent data
+
+The SQLite database is stored in a named Docker volume (`shadowradar_data`), mapped to `/app/data` inside the container. The volume survives container restarts and image updates — `docker compose pull && docker compose up -d` updates the app without touching the data.
+
+### CVE scan
+
+The scan script runs inside the container. Trigger it manually or via a host cron job using `docker exec`:
+
+```bash
+# Manual trigger
+docker exec shadowradar python /app/scripts/scan.py --db /app/data/shadowradar.db
+
+# Host crontab — run every 6 hours
+0 */6 * * * docker exec shadowradar python /app/scripts/scan.py --db /app/data/shadowradar.db
+```
+
+### Backup
+
+Back up the database volume to a compressed archive in the current directory:
+
+```bash
+docker run --rm \
+  -v shadowradar_data:/data \
+  -v $(pwd):/backup \
+  busybox \
+  tar czf /backup/shadowradar_backup_$(date +%Y%m%d_%H%M%S).tar.gz -C /data .
+```
+
+To restore from a backup:
+
+```bash
+docker run --rm \
+  -v shadowradar_data:/data \
+  -v $(pwd):/backup \
+  busybox \
+  tar xzf /backup/shadowradar_backup_20260603_143000.tar.gz -C /data
+```
+
+---
+
 ## License
 
 This project is unlicensed. Use at your own discretion.
