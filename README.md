@@ -321,4 +321,4 @@ docker run --rm \
 
 ## License
 
-This project is unlicensed. Use at your own discretion.
+This project is licensed under the [MIT License](LICENSE).
