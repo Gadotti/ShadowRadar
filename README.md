@@ -76,6 +76,14 @@ npm start            # production
 
 Open [http://localhost:3500](http://localhost:3500) in your browser.
 
+> **`ignore-scripts = true` in your npm config?** `better-sqlite3` ships a native binding that is only fetched/compiled by its install script. With install scripts disabled, the binding is missing and the server and tests fail with `Could not locate the bindings file`. After every `npm install` / `npm ci` (e.g. after merging dependency updates), run:
+>
+> ```bash
+> npm rebuild better-sqlite3 --ignore-scripts=false
+> ```
+>
+> This enables install scripts for that single package only. Stop any running ShadowRadar process first — on Windows, loaded `.node` files are locked and the reinstall fails with `EPERM`.
+
 ### Environment variables
 
 | Variable | Default | Description |
@@ -153,6 +161,8 @@ npm test
 # Run a single test file
 node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit/services/authService.test.js
 ```
+
+If most suites fail with `Could not locate the bindings file` after updating `node_modules`, see the [`better-sqlite3` rebuild note](#option-b--local-nodejs) in Quick Start.
 
 ### Test helpers
 
